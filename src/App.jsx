@@ -521,6 +521,7 @@ const fetchBatch = async (apiKey, offset) => {
                  w.location.city.trim() !== "")
     .filter(w => w.images?.day?.preview || w.images?.current?.preview)
     .filter(w => !w.title || !LOCATION_TEXT_PATTERNS.test(w.title))
+    .filter(w => !w.title || !/(club|webcam|hotel|resort|camping)/i.test(w.title))
     .filter(w => !w.lastUpdatedOn || (now - new Date(w.lastUpdatedOn).getTime()) < STALE_MS)
     .map(mapCam)
     .filter(c => c.imageUrl);
@@ -1176,6 +1177,7 @@ export default function GeoWatch() {
 
           {/* ── SNAPSHOT VIEWER ── */}
           <div style={{ position:"relative", width:"100%", aspectRatio:"16/9", background:"#0a0c12", borderRadius:6, overflow:"hidden", border:"1px solid rgba(0,255,179,0.2)" }}>
+            <div style={{ position:"absolute", bottom:0, left:0, right:0, height:"25%", background:"#07080d", zIndex:10, pointerEvents:"none" }} />
             <div style={{ position:"absolute", top:10, left:12, fontSize:10, letterSpacing:"0.18em", color:"#00ffb3", zIndex:20, background:"rgba(7,8,13,0.8)", padding:"2px 8px", borderRadius:3, fontFamily:"'Courier New',Courier,monospace" }}>
               ● CAM | ID {currentCam.id.slice(-5)}
             </div>
