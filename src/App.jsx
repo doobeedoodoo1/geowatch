@@ -108,6 +108,8 @@ const T = {
     unknownError:          "Unknown error",
     emptyResponse:         "Empty response from API",
     funFactPrompt:         (city, country) => `Respond in English. Give me a short, interesting fun fact (2-3 sentences) about the city ${city} in ${country}, or if you don't have reliable information about this city, about ${country} in general. Respond ONLY with a JSON object without markdown: {"fact": "text", "source": "source name", "url": "https://..."}`,
+    usernameRequired:      "Please enter a username",
+    backToMenu:            "← BACK TO MENU",
     shareResult:           "📤 SHARE RESULT",
     stats:                 "STATS",
     statsTitle:            "STATISTICS",
@@ -217,6 +219,8 @@ const T = {
     unknownError:          "Unbekannter Fehler",
     emptyResponse:         "Leere Antwort von API",
     funFactPrompt:         (city, country) => `Antworte auf Deutsch. Gib mir einen kurzen, interessanten Fun Fact (2-3 Sätze) über die Stadt ${city} in ${country}, oder falls du keine gesicherten Infos zu dieser Stadt hast, über ${country} allgemein. Antworte NUR mit einem JSON-Objekt ohne Markdown: {"fact": "text", "source": "Quellenname", "url": "https://..."}`,
+    usernameRequired:      "Bitte einen Benutzernamen eingeben",
+    backToMenu:            "← ZUM MENÜ",
     shareResult:           "📤 ERGEBNIS TEILEN",
     stats:                 "STATISTIKEN",
     statsTitle:            "STATISTIKEN",
@@ -330,8 +334,8 @@ const db = {
     return data || [];
   },
   async addScore({ name, score, date, rounds = 5 }) {
-    if (!supabase) return;
-    await supabase.from("leaderboard").insert([{ name, score, date, rounds }]);
+    if (!supabase || !name?.trim()) return;
+    await supabase.from("leaderboard").insert([{ name: name.trim(), score, date, rounds }]);
   },
   async loadDuel(code)        { if (!supabase) return null; const { data } = await supabase.from("duels").select("*").eq("code", code).maybeSingle(); return data; },
   async saveDuel(code, payload) { if (supabase) await supabase.from("duels").upsert([{ code, ...payload }]); },
@@ -583,6 +587,7 @@ export default function GeoWatch() {
   const [isDuel,        setIsDuel]       = useState(false);
   const [duelResult,    setDuelResult]   = useState(null);
   const [joinError,     setJoinError]    = useState("");
+  const [usernameError, setUsernameError] = useState(false);
   const [showApiBtn,    setShowApiBtn]   = useState(false);
   const [faqOpen,       setFaqOpen]      = useState(new Set());
   // ── Feature 1: region filter
@@ -1089,14 +1094,18 @@ export default function GeoWatch() {
         <div style={S.div} />
         <div style={S.stitle}>{t.operativeId}</div>
         <input style={S.inp} placeholder={t.usernamePlaceholder}
-          value={username} onChange={e => setUsername(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && username.trim() && startGame()} />
-        <button style={{ ...S.btn("p"), opacity:(username.trim()&&!camLoading)?1:0.4, padding:"14px", fontSize:15 }}
-          disabled={!username.trim()||camLoading} onClick={() => startGame()}>{t.startMission(rounds)}</button>
+          value={username}
+          onChange={e => { setUsername(e.target.value); setUsernameError(false); }}
+          onKeyDown={e => { if (e.key === "Enter") { if (!username.trim()) { setUsernameError(true); } else { startGame(); } } }} />
+        {usernameError && <div style={{ fontSize:12, color:"#ff8899" }}>{t.usernameRequired}</div>}
+        <button style={{ ...S.btn("p"), opacity:(!camLoading)?1:0.4, padding:"14px", fontSize:15 }}
+          disabled={camLoading}
+          onClick={() => { if (!username.trim()) { setUsernameError(true); } else { startGame(); } }}>{t.startMission(rounds)}</button>
         <div style={S.div} />
         <div style={S.stitle}>{t.duels}</div>
         <div style={S.g2}>
-          <button style={{ ...S.btn("g"), opacity:(username.trim()&&!camLoading)?1:0.4 }} disabled={!username.trim()||camLoading} onClick={createDuel}>{t.createDuel}</button>
+          <button style={{ ...S.btn("g"), opacity:!camLoading?1:0.4 }} disabled={camLoading}
+            onClick={() => { if (!username.trim()) { setUsernameError(true); } else { createDuel(); } }}>{t.createDuel}</button>
           <button style={S.btn("g")} onClick={() => setScreen("join-duel")}>{t.joinDuelBtn}</button>
         </div>
         {showApiBtn && <button style={{ ...S.btn("g"), fontSize:11, opacity:0.5 }} onClick={() => setScreen("setup")}>{t.reloadCameras}</button>}
@@ -1350,7 +1359,10 @@ export default function GeoWatch() {
             <div style={{ fontWeight:900, color:"#00ffb3", minWidth:60, textAlign:"right", fontFamily:"'Courier New',Courier,monospace" }}>{e.score}</div>
           </div>
         ))}
-        <button style={{ ...S.btn("p"), marginTop:8 }} onClick={() => startGame()}>{t.play}</button>
+        {username.trim()
+          ? <button style={{ ...S.btn("p"), marginTop:8 }} onClick={() => startGame()}>{t.play}</button>
+          : <button style={{ ...S.btn("g"), marginTop:8 }} onClick={() => setScreen("home")}>{t.backToMenu}</button>
+        }
         <div style={S.div} />
         <div style={S.stitle}>{t.badgeRanking}</div>
         <div style={{ background:"rgba(0,255,179,0.04)", border:"1px solid rgba(0,255,179,0.12)", borderRadius:4, padding:"12px 16px", fontSize:12, lineHeight:2.2 }}>
