@@ -1,0 +1,1534 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+// ── SUPABASE ──────────────────────────────────────────────────────────────────
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase     = SUPABASE_URL && SUPABASE_KEY ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+// ── CONSTANTS ─────────────────────────────────────────────────────────────────
+const ROUND_TIME = 30;
+const MAX_SCORE  = 1000;
+const CACHE_TTL  = 2 * 60 * 60 * 1000;
+
+// ── TRANSLATIONS ──────────────────────────────────────────────────────────────
+const T = {
+  en: {
+    initializing:          "INITIALIZING...",
+    supabaseError:         "⚠ Supabase not connected",
+    supabaseErrorDesc:     "Connect Supabase in Lovable (top right) and reload the page.",
+    step1:                 "Step 1 — Get a free Windy API key",
+    step2:                 "Step 2 — Enter API key",
+    errorLabel:            "⚠ Error",
+    loadCameras:           "▶ LOAD CAMERAS",
+    useCache:              (n) => `← USE CACHE (${n} cameras)`,
+    loadingCameras:        "LOADING CAMERAS...",
+    leaderboard:           "◈ LEADERBOARD",
+    leaderboardTitle:      "LEADERBOARD",
+    tagline:               "Live cameras worldwide · Identify the city · 3 options · Speed matters",
+    camerasLoaded:         (n) => `📡 ${n} cameras loaded`,
+    scoring:               "Scoring",
+    basePoints:            "Base points for each correct answer",
+    speedBonus:            "Speed bonus — the faster, the more",
+    maxPoints:             "Max points for instant correct answer",
+    zeroPoints:            "Points for wrong answer or timeout",
+    selectRounds:          "Select Rounds",
+    fiveRounds:            "5 ROUNDS",
+    tenRounds:             "10 ROUNDS",
+    max5k:                 "max. 5,000 pts.",
+    max10k:                "max. 10,000 pts.",
+    region:                "Region",
+    regionAll:             "🌍 All",
+    regionEurope:          "🌍 Europe",
+    regionAmericas:        "🌎 Americas",
+    regionAsia:            "🌏 Asia",
+    regionAfrica:          "🌍 Africa",
+    regionOceania:         "🌏 Oceania",
+    regionMiddleEast:      "🌍 Middle East",
+    regionTooFew:          "Not enough cameras in this region — playing with all cameras.",
+    zoomModeLabel:         "ZOOM MODE",
+    zoomHint:              "🔍 ZOOM",
+    operativeId:           "Operative ID",
+    usernamePlaceholder:   "Your username...",
+    startMission:          (n) => `▶ START MISSION (${n} Rounds)`,
+    duels:                 "Duels",
+    createDuel:            "⚔ CREATE",
+    joinDuelBtn:           "↗ JOIN",
+    reloadCameras:         "⚙ API-KEY / RELOAD CAMERAS",
+    back:                  "← BACK",
+    joinDuelTitle:         "Join Duel",
+    yourName:              "Your Name",
+    duelCode:              "Duel Code",
+    accept:                "⚔ ACCEPT",
+    codeNotFound:          "Code not found.",
+    duelEnded:             "Duel already ended.",
+    challengerPlaying:     "Challenger is still playing.",
+    duelBadge:             "⚔ DUEL",
+    roundLabel:            "ROUND",
+    scoreLabel:            "SCORE",
+    streakLabel:           (n) => `🔥 ${n}x STREAK`,
+    newRecord:             "NEW STREAK RECORD!",
+    noImage:               "NO IMAGE AVAILABLE",
+    whereIsCamera:         "WHERE IS THIS CAMERA?",
+    hintContinent:         "💡 CONTINENT  −150 pts",
+    hintClimate:           "🌡️ CLIMATE  −200 pts",
+    hintContinentLabel:    "CONTINENT",
+    hintClimateLabel:      "CLIMATE",
+    hintLoading:           "Loading hint...",
+    locationRevealed:      "LOCATION REVEALED",
+    pointsEarned:          (n) => `+${n} points`,
+    streakBonus:           (n) => `+${n} streak bonus`,
+    hintPenalty:           (n) => `−${n} hint penalty`,
+    noPoints:              "No points",
+    loadingFunFact:        "LOADING FUN FACT...",
+    funFactError:          "FUN FACT ERROR",
+    funFact:               "◈ FUN FACT",
+    nextRound:             "NEXT ROUND →",
+    results:               "RESULTS →",
+    missionComplete:       (n) => `MISSION COMPLETE · ${n} ROUNDS`,
+    pointsMax:             (n) => `POINTS · MAX. ${n}`,
+    roundSummary:          "Round Summary",
+    roundN:                (n) => `Round ${n}`,
+    playAgain:             "▶ PLAY AGAIN",
+    mainMenu:              "← MAIN MENU",
+    loading:               "Loading...",
+    noEntries:             "No entries yet.",
+    play:                  "▶ PLAY",
+    badgeRanking:          "Badge Ranking",
+    perfectRounds:         "perfect rounds",
+    yourScore:             "YOUR SCORE",
+    codeForOpponent:       "CODE FOR YOUR OPPONENT",
+    opponentInstruction:   "Opponent → Join duel → Enter code",
+    result:                "RESULT",
+    you:                   (name) => `YOU (${name})`,
+    winner:                "WINNER ◈",
+    playSolo:              "▶ PLAY SOLO",
+    menu:                  "← MENU",
+    tooFewCameras:         "Too few active cameras. Please wait 1–2 min and try again (new API keys need some time to activate).",
+    unknownError:          "Unknown error",
+    emptyResponse:         "Empty response from API",
+    funFactPrompt:         (city, country) => `Respond in English. Give me a short, interesting fun fact (2-3 sentences) about the city ${city} in ${country}, or if you don't have reliable information about this city, about ${country} in general. Respond ONLY with a JSON object without markdown: {"fact": "text", "source": "source name", "url": "https://..."}`,
+    shareResult:           "📤 SHARE RESULT",
+    stats:                 "STATS",
+    statsTitle:            "STATISTICS",
+    gamesPlayed:           "Games Played",
+    totalScore:            "Total Score",
+    bestGame:              "Best Game",
+    accuracy:              "Accuracy",
+    bestStreak:            "Best Streak",
+    byContinent:           "Accuracy by Continent",
+    recentGames:           "Recent Games",
+    resetStats:            "↺ Reset Stats",
+    noStats:               "No stats yet — play some rounds!",
+    correct:               "correct",
+  },
+  de: {
+    initializing:          "INITIALISIERUNG...",
+    supabaseError:         "⚠ Supabase nicht verbunden",
+    supabaseErrorDesc:     "Verbinde Supabase in Lovable (oben rechts) und lade die Seite neu.",
+    step1:                 "Schritt 1 — Kostenlosen Windy API-Key holen",
+    step2:                 "Schritt 2 — API-Key eintragen",
+    errorLabel:            "⚠ Fehler",
+    loadCameras:           "▶ KAMERAS LADEN",
+    useCache:              (n) => `← CACHE NUTZEN (${n} Kameras)`,
+    loadingCameras:        "KAMERAS WERDEN GELADEN...",
+    leaderboard:           "◈ RANGLISTE",
+    leaderboardTitle:      "RANGLISTE",
+    tagline:               "Live-Kameras weltweit · Erkenne die Stadt · 3 Optionen · Schnelligkeit zählt",
+    camerasLoaded:         (n) => `📡 ${n} Kameras geladen`,
+    scoring:               "Punktesystem",
+    basePoints:            "Basispunkte für jede richtige Antwort",
+    speedBonus:            "Schnelligkeitsbonus — je schneller, desto mehr",
+    maxPoints:             "Maximalpunkte bei sofortiger richtiger Antwort",
+    zeroPoints:            "Punkte bei falscher Antwort oder Zeitablauf",
+    selectRounds:          "Rundenanzahl wählen",
+    fiveRounds:            "5 RUNDEN",
+    tenRounds:             "10 RUNDEN",
+    max5k:                 "max. 5.000 Pkt.",
+    max10k:                "max. 10.000 Pkt.",
+    region:                "Region",
+    regionAll:             "🌍 Alle",
+    regionEurope:          "🌍 Europa",
+    regionAmericas:        "🌎 Amerika",
+    regionAsia:            "🌏 Asien",
+    regionAfrica:          "🌍 Afrika",
+    regionOceania:         "🌏 Ozeanien",
+    regionMiddleEast:      "🌍 Naher Osten",
+    regionTooFew:          "Zu wenige Kameras in dieser Region — spiele mit allen Kameras.",
+    zoomModeLabel:         "ZOOM-MODUS",
+    zoomHint:              "🔍 ZOOM",
+    operativeId:           "BENUTZER ID",
+    usernamePlaceholder:   "Dein Benutzername...",
+    startMission:          (n) => `▶ MISSION STARTEN (${n} Runden)`,
+    duels:                 "Duelle",
+    createDuel:            "⚔ ERSTELLEN",
+    joinDuelBtn:           "↗ BEITRETEN",
+    reloadCameras:         "⚙ API-KEY / CAMS NEU LADEN",
+    back:                  "← ZURÜCK",
+    joinDuelTitle:         "Duell beitreten",
+    yourName:              "Dein Name",
+    duelCode:              "Duell-Code",
+    accept:                "⚔ ANNEHMEN",
+    codeNotFound:          "Code nicht gefunden.",
+    duelEnded:             "Duell bereits beendet.",
+    challengerPlaying:     "Herausforderer spielt noch.",
+    duelBadge:             "⚔ DUELL",
+    roundLabel:            "RUNDE",
+    scoreLabel:            "PUNKTE",
+    streakLabel:           (n) => `🔥 ${n}x SERIE`,
+    newRecord:             "NEUER SERIEN-REKORD!",
+    noImage:               "KEIN BILD VERFÜGBAR",
+    whereIsCamera:         "WO BEFINDET SICH DIESE KAMERA?",
+    hintContinent:         "💡 KONTINENT  −150 Pkt.",
+    hintClimate:           "🌡️ KLIMA  −200 Pkt.",
+    hintContinentLabel:    "KONTINENT",
+    hintClimateLabel:      "KLIMA",
+    hintLoading:           "Tipp wird geladen...",
+    locationRevealed:      "STANDORT ENTHÜLLT",
+    pointsEarned:          (n) => `+${n} Punkte`,
+    streakBonus:           (n) => `+${n} Serienbonus`,
+    hintPenalty:           (n) => `−${n} Tipp-Abzug`,
+    noPoints:              "Keine Punkte",
+    loadingFunFact:        "FUN FACT WIRD GELADEN...",
+    funFactError:          "FUN FACT FEHLER",
+    funFact:               "◈ FUN FACT",
+    nextRound:             "NÄCHSTE RUNDE →",
+    results:               "ERGEBNIS →",
+    missionComplete:       (n) => `MISSION ABGESCHLOSSEN · ${n} RUNDEN`,
+    pointsMax:             (n) => `PUNKTE · MAX. ${n}`,
+    roundSummary:          "Runden-Übersicht",
+    roundN:                (n) => `Runde ${n}`,
+    playAgain:             "▶ NOCHMAL",
+    mainMenu:              "← HAUPTMENÜ",
+    loading:               "Lade...",
+    noEntries:             "Noch keine Einträge.",
+    play:                  "▶ SPIELEN",
+    badgeRanking:          "Abzeichen-Rangfolge",
+    perfectRounds:         "perfekte Runden",
+    yourScore:             "DEIN ERGEBNIS",
+    codeForOpponent:       "CODE FÜR DEINEN GEGNER",
+    opponentInstruction:   `Gegner → "Duell beitreten" → Code eingeben`,
+    result:                "ERGEBNIS",
+    you:                   (name) => `DU (${name})`,
+    winner:                "GEWINNER ◈",
+    playSolo:              "▶ SOLO SPIELEN",
+    menu:                  "← MENÜ",
+    tooFewCameras:         "Zu wenige aktive Kameras. Bitte 1–2 Min. warten und nochmal versuchen (neue API-Keys brauchen etwas Zeit).",
+    unknownError:          "Unbekannter Fehler",
+    emptyResponse:         "Leere Antwort von API",
+    funFactPrompt:         (city, country) => `Antworte auf Deutsch. Gib mir einen kurzen, interessanten Fun Fact (2-3 Sätze) über die Stadt ${city} in ${country}, oder falls du keine gesicherten Infos zu dieser Stadt hast, über ${country} allgemein. Antworte NUR mit einem JSON-Objekt ohne Markdown: {"fact": "text", "source": "Quellenname", "url": "https://..."}`,
+    shareResult:           "📤 ERGEBNIS TEILEN",
+    stats:                 "STATISTIKEN",
+    statsTitle:            "STATISTIKEN",
+    gamesPlayed:           "Gespielte Runden",
+    totalScore:            "Gesamtpunkte",
+    bestGame:              "Bestes Spiel",
+    accuracy:              "Trefferquote",
+    bestStreak:            "Bester Streak",
+    byContinent:           "Trefferquote nach Kontinent",
+    recentGames:           "Letzte Spiele",
+    resetStats:            "↺ Stats zurücksetzen",
+    noStats:               "Noch keine Statistiken — spiel ein paar Runden!",
+    correct:               "richtig",
+  },
+};
+
+// ── FAQ DATA ──────────────────────────────────────────────────────────────────
+const FAQ_DATA = {
+  en: [
+    { q: "How does GeoWatch work?",          a: "GeoWatch shows you real webcam snapshots from around the world. Choose the correct city from 3 options. The faster you answer, the more points you earn. Each correct answer gives you 500 base points plus up to 500 speed bonus points." },
+    { q: "What is the Streak Bonus?",         a: "Answer multiple questions correctly in a row to earn a streak bonus: 2× streak = +50 pts, 3× = +100 pts, 4× = +150 pts, 5× or more = +200 pts per round." },
+    { q: "What is Zoom Mode?",                a: "Activate Zoom Mode on the home screen to make the game harder. The image starts zoomed in and gradually zooms out. Answer early for maximum points!" },
+    { q: "How do hints work?",                a: "You can buy two hints per round: Continent hint (−150 pts) reveals which continent the camera is in. Climate hint (−200 pts) describes the typical climate of the location without revealing the name." },
+    { q: "What are the badges?",              a: "Earn a badge for every perfect round (all answers correct). 🏅 1–9 perfect rounds · ⭐ 10–19 · 💎 20–49 · 👑 50+ perfect rounds. Badges appear next to your name on the leaderboard." },
+    { q: "What is the Daily Challenge?",      a: "Coming soon! All players worldwide will get the same 5 cameras each day with a global daily ranking." },
+    { q: "How do Duels work?",                a: "Create a duel on the home screen to get a 6-digit code. Share the code with a friend. They enter it under \"Join Duel\" and play the exact same camera sequence. The higher score wins!" },
+    { q: "What does the Region filter do?",   a: "Choose a region (Europe, Americas, Asia, Africa, Oceania, Middle East) to only see cameras from that part of the world." },
+    { q: "How is the Leaderboard calculated?",a: "The leaderboard shows all-time high scores from all players worldwide. Only your best game per session is saved. Badges are shown next to names." },
+    { q: "Where do the camera images come from?", a: "GeoWatch uses the Windy Webcams API with over 40,000 real webcams worldwide. Images are daylight snapshots updated regularly." },
+  ],
+  de: [
+    { q: "Wie funktioniert GeoWatch?",        a: "GeoWatch zeigt dir echte Webcam-Aufnahmen aus aller Welt. Wähle die richtige Stadt aus 3 Optionen. Je schneller du antwortest, desto mehr Punkte bekommst du. Jede richtige Antwort gibt 500 Basispunkte plus bis zu 500 Schnelligkeitsbonus." },
+    { q: "Was ist der Serien-Bonus?",          a: "Beantworte mehrere Fragen hintereinander richtig für einen Serienbonus: 2× Serie = +50 Pkt, 3× = +100 Pkt, 4× = +150 Pkt, 5× oder mehr = +200 Pkt pro Runde." },
+    { q: "Was ist der Zoom-Modus?",            a: "Aktiviere den Zoom-Modus auf der Startseite für mehr Schwierigkeit. Das Bild startet stark gezoomt und zoomt langsam heraus. Früh antworten = mehr Punkte!" },
+    { q: "Wie funktionieren Tipps?",           a: "Du kannst zwei Tipps pro Runde kaufen: Kontinent-Tipp (−150 Pkt) verrät den Kontinent der Kamera. Klima-Tipp (−200 Pkt) beschreibt das typische Klima ohne den Ortsnamen zu nennen." },
+    { q: "Was sind Abzeichen?",                a: "Verdiene ein Abzeichen für jede perfekte Runde (alle Antworten richtig). 🏅 1–9 perfekte Runden · ⭐ 10–19 · 💎 20–49 · 👑 50+ perfekte Runden. Abzeichen erscheinen neben deinem Namen in der Rangliste." },
+    { q: "Wie funktionieren Duelle?",          a: "Erstelle ein Duell auf der Startseite und erhalte einen 6-stelligen Code. Teile den Code mit einem Freund. Er gibt ihn unter \"Duell beitreten\" ein und spielt dieselbe Kamera-Sequenz. Die höhere Punktzahl gewinnt!" },
+    { q: "Was macht der Regionen-Filter?",     a: "Wähle eine Region (Europa, Amerika, Asien, Afrika, Ozeanien, Naher Osten) um nur Kameras aus diesem Teil der Welt zu sehen." },
+    { q: "Wie wird die Rangliste berechnet?",  a: "Die Rangliste zeigt alle Highscores aller Spieler weltweit. Abzeichen werden neben den Namen angezeigt." },
+    { q: "Woher kommen die Kamerabilder?",     a: "GeoWatch nutzt die Windy Webcams API mit über 40.000 echten Webcams weltweit. Die Bilder sind Tageslicht-Aufnahmen die regelmäßig aktualisiert werden." },
+  ],
+};
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+const flag = (code) => {
+  if (!code || code.length < 2) return "🌍";
+  try { return String.fromCodePoint(0x1F1E6 + code.toUpperCase().charCodeAt(0) - 65, 0x1F1E6 + code.toUpperCase().charCodeAt(1) - 65); }
+  catch { return "🌍"; }
+};
+const shuffle       = (a) => [...a].sort(() => Math.random() - 0.5);
+const genCode       = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+const calcScore     = (t) => Math.round(MAX_SCORE * 0.5 + MAX_SCORE * 0.5 * (t / ROUND_TIME));
+const camLabel      = (c) => `${c.city} (${c.country})`;
+const calcStreakBonus = (s) => s >= 5 ? 200 : s === 4 ? 150 : s === 3 ? 100 : s === 2 ? 50 : 0;
+
+const matchRegion = (continent = "", region) => {
+  const c = continent.toLowerCase();
+  switch (region) {
+    case "europe":     return c.includes("eu") || c.includes("europe");
+    case "americas":   return c.includes("america") || c === "na" || c === "sa";
+    case "asia":       return c.includes("asia") || c === "as";
+    case "africa":     return c.includes("africa") || c === "af";
+    case "oceania":    return c.includes("oceania") || c.includes("australia") || c === "oc";
+    case "middleeast": return c.includes("middle") || c === "me";
+    default:           return true;
+  }
+};
+
+const getOptions = (correct, pool) => {
+  const shuffled = pool.filter(c => c.country !== correct.country).sort(() => Math.random() - 0.5);
+  const usedCountries = new Set([correct.country]);
+  const wrongOptions = [];
+
+  for (const cam of shuffled) {
+    if (!usedCountries.has(cam.country)) {
+      usedCountries.add(cam.country);
+      wrongOptions.push(cam);
+      if (wrongOptions.length === 2) break;
+    }
+  }
+
+  // Fallback: relax country uniqueness if pool doesn't have enough distinct countries
+  if (wrongOptions.length < 2) {
+    const used = new Set(wrongOptions.map(camLabel));
+    for (const cam of shuffled) {
+      if (!used.has(camLabel(cam))) {
+        wrongOptions.push(cam);
+        used.add(camLabel(cam));
+        if (wrongOptions.length === 2) break;
+      }
+    }
+  }
+
+  return shuffle([camLabel(correct), ...wrongOptions.map(camLabel)]);
+};
+
+const buildSeq = (pool, rounds) =>
+  shuffle([...Array(pool.length).keys()]).slice(0, Math.min(rounds, pool.length));
+
+// ── LOCAL STORAGE ─────────────────────────────────────────────────────────────
+const ls = {
+  get: (k)    => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
+// ── SUPABASE DB ───────────────────────────────────────────────────────────────
+const db = {
+  async loadLB() {
+    if (!supabase) return [];
+    const { data, error } = await supabase.from("leaderboard").select("name,score,date").order("score", { ascending: false }).limit(20);
+    return data || [];
+  },
+  async addScore({ name, score, date }) {
+    if (!supabase) return;
+    await supabase.from("leaderboard").insert([{ name, score, date }]);
+  },
+  async loadDuel(code)        { if (!supabase) return null; const { data } = await supabase.from("duels").select("*").eq("code", code).maybeSingle(); return data; },
+  async saveDuel(code, payload) { if (supabase) await supabase.from("duels").upsert([{ code, ...payload }]); },
+};
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+const STATS_KEY  = "geowatch:stats";
+const emptyStats = () => ({ gamesPlayed:0, totalScore:0, correctAnswers:0, totalAnswers:0, bestScore:0, bestStreak:0, continentStats:{}, recentGames:[] });
+
+const saveStats = (roundScores, sequence, pool, maxStreak) => {
+  const prev = ls.get(STATS_KEY) || emptyStats();
+  const finalScore = roundScores.reduce((a, b) => a + b, 0);
+  const correct    = roundScores.filter(s => s > 0).length;
+  const continentStats = { ...prev.continentStats };
+  roundScores.forEach((score, i) => {
+    const cam = pool[sequence[i]];
+    if (!cam) return;
+    const cont = cam.continent || "Unknown";
+    if (!continentStats[cont]) continentStats[cont] = { correct:0, total:0 };
+    continentStats[cont].total++;
+    if (score > 0) continentStats[cont].correct++;
+  });
+  ls.set(STATS_KEY, {
+    gamesPlayed:    prev.gamesPlayed + 1,
+    totalScore:     prev.totalScore + finalScore,
+    correctAnswers: prev.correctAnswers + correct,
+    totalAnswers:   prev.totalAnswers + roundScores.length,
+    bestScore:      Math.max(prev.bestScore, finalScore),
+    bestStreak:     Math.max(prev.bestStreak, maxStreak),
+    continentStats,
+    recentGames: [{ score:finalScore, date:new Date().toLocaleDateString(), rounds:roundScores.length, correct }, ...prev.recentGames].slice(0, 10),
+  });
+};
+
+// ── SHARE CARD ────────────────────────────────────────────────────────────────
+const rrect = (ctx, x, y, w, h, r) => {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+};
+
+const generateShareCard = (totalScore, roundScores, maxStreak, gameRounds, lang) => {
+  const c = document.createElement("canvas");
+  c.width = 1080; c.height = 1080;
+  const ctx = c.getContext("2d");
+
+  // Background
+  ctx.fillStyle = "#07080d";
+  ctx.fillRect(0, 0, 1080, 1080);
+
+  // Scan lines
+  ctx.fillStyle = "rgba(0,255,180,0.012)";
+  for (let y = 0; y < 1080; y += 4) ctx.fillRect(0, y + 2, 1080, 2);
+
+  // Outer border
+  ctx.strokeStyle = "rgba(0,255,179,0.22)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(44, 44, 992, 992);
+
+  // Corner accents
+  const corner = (x, y, dx, dy) => {
+    ctx.strokeStyle = "#00ffb3"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x, y + dy*48); ctx.lineTo(x, y); ctx.lineTo(x + dx*48, y); ctx.stroke();
+  };
+  corner(44,44,1,1); corner(1036,44,-1,1); corner(44,1036,1,-1); corner(1036,1036,-1,-1);
+
+  ctx.textAlign = "center";
+
+  // GEOWATCH logo
+  ctx.shadowColor = "rgba(0,255,179,0.6)"; ctx.shadowBlur = 30;
+  ctx.font = "900 80px 'Courier New', Courier, monospace";
+  ctx.fillStyle = "#00ffb3";
+  ctx.fillText("GEOWATCH", 540, 168);
+  ctx.shadowBlur = 0;
+
+  // Tagline
+  ctx.font = "400 21px 'Courier New', Courier, monospace";
+  ctx.fillStyle = "#2a3344";
+  ctx.fillText("GLOBAL SURVEILLANCE GAME", 540, 208);
+
+  // Divider
+  ctx.strokeStyle = "rgba(0,255,179,0.12)"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(100, 236); ctx.lineTo(980, 236); ctx.stroke();
+
+  // Score
+  ctx.shadowColor = "rgba(0,255,179,0.5)"; ctx.shadowBlur = 55;
+  ctx.font = "900 176px 'Courier New', Courier, monospace";
+  ctx.fillStyle = "#00ffb3";
+  ctx.fillText(totalScore.toLocaleString(), 540, 454);
+  ctx.shadowBlur = 0;
+
+  ctx.font = "400 25px 'Courier New', Courier, monospace";
+  ctx.fillStyle = "#3a4a5a";
+  ctx.fillText(lang === "de" ? "PUNKTE" : "POINTS", 540, 493);
+
+  // Divider
+  ctx.strokeStyle = "rgba(0,255,179,0.08)"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(100, 520); ctx.lineTo(980, 520); ctx.stroke();
+
+  // Round result grid
+  const n = roundScores.length;
+  const cols = Math.min(n, 5);
+  const rows = Math.ceil(n / cols);
+  const box = 82; const gap = 14;
+  const gridW = cols * box + (cols - 1) * gap;
+  const gx = 540 - gridW / 2;
+  const gy = 548;
+
+  for (let i = 0; i < n; i++) {
+    const col = i % cols; const row = Math.floor(i / cols);
+    const x = gx + col * (box + gap); const y = gy + row * (box + gap);
+    const ok = roundScores[i] > 0;
+    ctx.fillStyle = ok ? "rgba(0,255,179,0.12)" : "rgba(255,68,85,0.12)";
+    rrect(ctx, x, y, box, box, 10); ctx.fill();
+    ctx.strokeStyle = ok ? "rgba(0,255,179,0.55)" : "rgba(255,68,85,0.55)";
+    ctx.lineWidth = 2;
+    rrect(ctx, x, y, box, box, 10); ctx.stroke();
+    ctx.font = "bold 42px monospace";
+    ctx.fillStyle = ok ? "#00ffb3" : "#ff4455";
+    ctx.fillText(ok ? "✓" : "✗", x + box / 2, y + box / 2 + 15);
+  }
+
+  const afterGrid = gy + rows * (box + gap) + 24;
+
+  // Streak
+  if (maxStreak >= 2) {
+    ctx.font = "700 32px 'Courier New', Courier, monospace";
+    ctx.fillStyle = "#ffaa00";
+    ctx.fillText(`🔥 ${maxStreak}× STREAK MAX`, 540, afterGrid + 44);
+  }
+
+  // Date / rounds info
+  ctx.font = "400 23px 'Courier New', Courier, monospace";
+  ctx.fillStyle = "#3a4a5a";
+  const dateStr = new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-GB");
+  ctx.fillText(`${gameRounds} ${lang === "de" ? "Runden" : "Rounds"} · ${dateStr}`, 540, maxStreak >= 2 ? afterGrid + 94 : afterGrid + 44);
+
+  // Bottom divider + URL
+  ctx.strokeStyle = "rgba(0,255,179,0.1)"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(100, 968); ctx.lineTo(980, 968); ctx.stroke();
+  ctx.font = "400 24px 'Courier New', Courier, monospace";
+  ctx.fillStyle = "rgba(0,255,179,0.3)";
+  ctx.fillText("geowatchgame.com", 540, 1008);
+
+  return c;
+};
+
+// ── WINDY API via Edge Function ───────────────────────────────────────────────
+const EDGE_URL = "https://muaquiygkhdqvkkglgau.supabase.co/functions/v1/windy-proxy";
+
+const callProxy = async (body) => {
+  const resp = await fetch(EDGE_URL, {
+    method:  "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_KEY}`, "apikey": SUPABASE_KEY },
+    body: JSON.stringify(body),
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
+  if (data?.error) throw new Error(data.error);
+  return data;
+};
+
+const mapCam = (w) => ({
+  id:          String(w.webcamId),
+  city:        w.location?.city,
+  country:     w.location?.country || w.location?.country_code,
+  countryCode: w.location?.country_code,
+  continent:   w.location?.continent || "Unknown",
+  flag:        flag(w.location?.country_code),
+  lat:         w.location?.latitude  ?? null,
+  lon:         w.location?.longitude ?? null,
+  imageUrl:    w.images?.day?.preview || w.images?.daylight?.preview || w.images?.current?.preview || null,
+});
+
+const LOCATION_TEXT_PATTERNS = /strada|street|rue\s|via\s|str\.|calle\s|foto-webcam\.eu|feratel|\d{1,3}\.\d+[°,]\s*\d/i;
+const STALE_MS = 30 * 24 * 60 * 60 * 1000;
+
+const fetchBatch = async (apiKey, offset) => {
+  const now  = Date.now();
+  const data = await callProxy({ apiKey, offset, limit: 50 });
+  return (data?.webcams || [])
+    .filter(w => w.location?.city && w.location?.country_code &&
+                 w.location.city.toLowerCase() !== "unknown" &&
+                 w.location.city.trim() !== "")
+    .filter(w => w.images?.day?.preview || w.images?.current?.preview)
+    .filter(w => !w.title || !LOCATION_TEXT_PATTERNS.test(w.title))
+    .filter(w => !w.lastUpdatedOn || (now - new Date(w.lastUpdatedOn).getTime()) < STALE_MS)
+    .map(mapCam)
+    .filter(c => c.imageUrl);
+};
+
+const loadCams = async (apiKey, onProgress) => {
+  const base    = Math.floor(Math.random() * 300);
+  const offsets = Array.from({ length: 15 }, (_, i) => base + i * 50);
+  let firstErr  = null;
+  const results = await Promise.allSettled(
+    offsets.map(async (off, i) => { const batch = await fetchBatch(apiKey, off); onProgress(i + 1, offsets.length); return batch; })
+  );
+  const valid = results.filter(r => { if (r.status === "rejected" && !firstErr) firstErr = r.reason; return r.status === "fulfilled"; });
+  const all   = valid.flatMap(r => r.value);
+  if (all.length === 0 && firstErr) throw firstErr;
+  const seen = new Set();
+  return all.filter(c => { if (seen.has(c.id)) return false; seen.add(c.id); return true; });
+};
+
+const refreshImageUrl = async (apiKey, camId) => {
+  try {
+    const data = await callProxy({ apiKey, webcamId: camId });
+    const cam  = data?.webcams?.[0] || data;
+    return cam?.images?.current?.preview || cam?.images?.current?.thumbnail || null;
+  } catch { return null; }
+};
+
+const randOrigin = () => `${20 + Math.floor(Math.random() * 60)}% ${20 + Math.floor(Math.random() * 60)}%`;
+
+// ══════════════════════════════════════════════════════════════════════════════
+export default function GeoWatch() {
+  const [screen,        setScreen]       = useState("boot");
+  const [lang,          setLang]         = useState("en");
+  const [apiInput,      setApiInput]     = useState("");
+  const [apiError,      setApiError]     = useState("");
+  const [loadProg,      setLoadProg]     = useState([0, 15]);
+  const [camLoading,    setCamLoading]   = useState(false);
+  const [pool,          setPool]         = useState([]);
+  const [username,      setUsername]     = useState("");
+  const [rounds,        setRounds]       = useState(5);
+  const [gameRounds,    setGameRounds]   = useState(5);
+  const [sequence,      setSequence]     = useState([]);
+  const [roundIdx,      setRoundIdx]     = useState(0);
+  const [options,       setOptions]      = useState([]);
+  const [timeLeft,      setTimeLeft]     = useState(ROUND_TIME);
+  const [selected,      setSelected]     = useState(null);
+  const [roundScores,   setRoundScores]  = useState([]);
+  const [camImgUrl,     setCamImgUrl]    = useState(null);
+  const [imgLoading,    setImgLoading]   = useState(true);
+  const [imgUnusable,   setImgUnusable]  = useState(false);
+  const [funFact,       setFunFact]      = useState(null);
+  const [funFactLoad,   setFunFactLoad]  = useState(false);
+  const [funFactError,  setFunFactError] = useState(null);
+  const [leaderboard,   setLeaderboard]  = useState([]);
+  const [lbLoading,     setLbLoading]    = useState(false);
+  const [duelCode,      setDuelCode]     = useState("");
+  const [joinInput,     setJoinInput]    = useState("");
+  const [duelMeta,      setDuelMeta]     = useState(null);
+  const [isDuel,        setIsDuel]       = useState(false);
+  const [duelResult,    setDuelResult]   = useState(null);
+  const [joinError,     setJoinError]    = useState("");
+  const [showApiBtn,    setShowApiBtn]   = useState(false);
+  const [faqOpen,       setFaqOpen]      = useState(new Set());
+  // ── Feature 1: region filter
+  const [region,        setRegion]       = useState("all");
+  const [regionWarning, setRegionWarning] = useState("");
+  // ── Feature 2: streak
+  const [streak,        setStreak]       = useState(0);
+  const [maxStreak,     setMaxStreak]    = useState(0);
+  const [newRecord,     setNewRecord]    = useState(false);
+  // ── Feature 3: zoom mode
+  const [zoomMode,      setZoomMode]     = useState(false);
+  const [zoomOrigin,    setZoomOrigin]   = useState("50% 50%");
+  // ── Feature 4: hints
+  const [hintContUsed,  setHintContUsed] = useState(false);
+  const [hintClimUsed,  setHintClimUsed] = useState(false);
+  const [hintClimText,  setHintClimText] = useState("");
+  const [hintClimLoad,  setHintClimLoad] = useState(false);
+  const [hintPenalty,   setHintPenalty]  = useState(0);
+  const timerRef = useRef(null);
+
+  const t          = T[lang];
+  const currentCam = sequence.length && pool.length ? pool[sequence[roundIdx]] : null;
+  const totalScore = roundScores.reduce((a, b) => a + b, 0);
+  const roundCount = Math.min(gameRounds, pool.length);
+
+  // ── BOOT ────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    (async () => {
+      if (!supabase) { setScreen("setup"); return; }
+      const key   = ls.get("geowatch:windykey");
+      const cache = ls.get("geowatch:camcache");
+      if (cache && Date.now() - cache.fetchedAt < CACHE_TTL && cache.cams?.length > 10) {
+        setPool(shuffle(cache.cams));
+        setScreen(key ? "home" : "setup");
+        return;
+      }
+      if (!key) { setScreen("setup"); return; }
+      setScreen("home");
+      setCamLoading(true);
+      setLoadProg([0, 15]);
+      setApiError("");
+      try {
+        const cams = await loadCams(key, (d, total) => setLoadProg([d, total]));
+        if (cams.length < 5) throw new Error(T.en.tooFewCameras);
+        const s = shuffle(cams);
+        setPool(s);
+        ls.set("geowatch:camcache", { cams: s, fetchedAt: Date.now() });
+      } catch (err) {
+        setApiError(err.message || T.en.unknownError);
+        setScreen("setup");
+      } finally {
+        setCamLoading(false);
+      }
+    })();
+  }, []);
+
+  // ── SHIFT+ALT+A ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (screen !== "home") return;
+    const handler = (e) => { if (e.shiftKey && e.altKey && e.key === "A") setShowApiBtn(v => !v); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [screen]);
+
+  // ── NEW STREAK RECORD: auto-clear after 3s ────────────────────────────────
+  useEffect(() => {
+    if (!newRecord) return;
+    const id = setTimeout(() => setNewRecord(false), 3000);
+    return () => clearTimeout(id);
+  }, [newRecord]);
+
+  // ── UNUSABLE IMAGE: auto-skip after 2s ───────────────────────────────────
+  useEffect(() => {
+    if (!imgUnusable) return;
+    stopTimer();
+    const id = setTimeout(() => nextRound(), 2000);
+    return () => clearTimeout(id);
+  }, [imgUnusable]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── CAM-BILD laden/refreshen ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!currentCam) return;
+    setImgLoading(true);
+    setCamImgUrl(currentCam.imageUrl);
+    setFunFact(null);
+    setFunFactLoad(false);
+    setFunFactError(null);
+    setZoomOrigin(randOrigin());
+    setHintContUsed(false);
+    setHintClimUsed(false);
+    setHintClimText("");
+    setHintClimLoad(false);
+    setHintPenalty(0);
+    setImgUnusable(false);
+  }, [currentCam?.id]);
+
+  const handleImgError = useCallback(async () => {
+    const apiKey = ls.get("geowatch:windykey");
+    if (!currentCam || !apiKey) { setImgLoading(false); return; }
+    const fresh = await refreshImageUrl(apiKey, currentCam.id);
+    setCamImgUrl(fresh);
+    setImgLoading(false);
+  }, [currentCam]);
+
+  // ── AUTO-REFRESH snapshot every 30s ──────────────────────────────────────
+  useEffect(() => {
+    if (screen !== "game" || !currentCam) return;
+    const apiKey = ls.get("geowatch:windykey");
+    if (!apiKey) return;
+    const id = setInterval(async () => {
+      const fresh = await refreshImageUrl(apiKey, currentCam.id);
+      if (fresh) setCamImgUrl(fresh);
+    }, 30_000);
+    return () => clearInterval(id);
+  }, [screen, currentCam?.id]);
+
+  const fetchFunFact = useCallback(async (city, country) => {
+    const key = import.meta.env.VITE_ANTHROPIC_API_KEY;
+    if (!key) return;
+    setFunFactLoad(true);
+    try {
+      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 300, messages: [{ role: "user", content: t.funFactPrompt(city, country) }] }),
+      });
+      const data = await resp.json();
+      if (!resp.ok || data?.error) { setFunFactError(`HTTP ${resp.status}: ${data?.error?.message || data?.error || resp.statusText}`); return; }
+      const text = data?.content?.[0]?.text || "";
+      try {
+        const clean  = text.replace(/```json|```/g, "").trim();
+        const match  = clean.match(/\{[\s\S]*\}/);
+        setFunFact(JSON.parse(match?.[0] ?? clean));
+      } catch { if (text) setFunFact({ fact: text }); else setFunFactError(t.emptyResponse); }
+    } catch (err) { setFunFactError(err.message); }
+    setFunFactLoad(false);
+  }, [lang]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Feature 4: climate hint via Claude ───────────────────────────────────
+  const fetchClimateHint = useCallback(async () => {
+    if (!currentCam || hintClimText) return;
+    setHintClimLoad(true);
+    const key = import.meta.env.VITE_ANTHROPIC_API_KEY;
+    if (!key) { setHintClimLoad(false); return; }
+    try {
+      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 80, messages: [{ role: "user", content: `For ${currentCam.city}, ${currentCam.country}: Describe only the climate zone and typical weather in one sentence. Do NOT mention any city name, country name, or region name. Only describe temperature, precipitation, and seasons.` }] }),
+      });
+      const data = await resp.json();
+      const text = data?.content?.[0]?.text?.trim() || "";
+      if (text) setHintClimText(text);
+    } catch { /* silent */ }
+    setHintClimLoad(false);
+  }, [currentCam, hintClimText]);
+
+  // ── FETCH CAMS ───────────────────────────────────────────────────────────
+  const fetchAndCache = useCallback(async (key) => {
+    setScreen("loading"); setLoadProg([0, 15]); setApiError("");
+    try {
+      const cams = await loadCams(key, (d, total) => setLoadProg([d, total]));
+      if (cams.length < 5) throw new Error(t.tooFewCameras);
+      const s = shuffle(cams);
+      setPool(s);
+      ls.set("geowatch:camcache", { cams: s, fetchedAt: Date.now() });
+      setScreen("home");
+    } catch (err) {
+      setApiError(err.message || t.unknownError);
+      setScreen("setup");
+    }
+  }, [lang]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const submitKey = useCallback(async () => {
+    const key = apiInput.trim();
+    if (!key) return;
+    ls.set("geowatch:windykey", key);
+    fetchAndCache(key);
+  }, [apiInput, fetchAndCache]);
+
+  // ── LEADERBOARD ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (screen !== "leaderboard") return;
+    setLbLoading(true);
+    db.loadLB().then(lb => { setLeaderboard(lb); setLbLoading(false); });
+  }, [screen]);
+
+  // ── TIMER ────────────────────────────────────────────────────────────────
+  const stopTimer = useCallback(() => clearInterval(timerRef.current), []);
+
+  useEffect(() => {
+    if (screen !== "game" || selected !== null) return;
+    timerRef.current = setInterval(() => {
+      setTimeLeft(t => { if (t <= 1) { handleAnswer(null); return 0; } return t - 1; });
+    }, 1000);
+    return stopTimer;
+  }, [screen, roundIdx, selected]);
+
+  // ── GAME START ───────────────────────────────────────────────────────────
+  const startGame = useCallback((seq = null, meta = null, p = null) => {
+    const rawPool = p ?? pool;
+    let ap = rawPool;
+    if (region !== "all") {
+      const filtered = rawPool.filter(c => matchRegion(c.continent, region));
+      if (filtered.length < 5) {
+        setRegionWarning(t.regionTooFew);
+        ap = rawPool;
+      } else {
+        setRegionWarning("");
+        ap = filtered;
+      }
+    }
+    const r = meta?.rounds ?? rounds;
+    const s = seq ?? buildSeq(ap, r);
+    setGameRounds(r);
+    setSequence(s); setRoundIdx(0); setRoundScores([]);
+    setOptions(getOptions(ap[s[0]], ap));
+    setTimeLeft(ROUND_TIME); setSelected(null);
+    setIsDuel(!!meta); setDuelMeta(meta);
+    setStreak(0); setMaxStreak(0); setNewRecord(false);
+    setScreen("game");
+  }, [pool, rounds, region, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── ANSWER ───────────────────────────────────────────────────────────────
+  const handleAnswer = useCallback((city) => {
+    stopTimer();
+    const isCorrect  = city === camLabel(currentCam);
+    const newStreak  = isCorrect ? streak + 1 : 0;
+    const bonus      = isCorrect ? calcStreakBonus(newStreak) : 0;
+    const base       = isCorrect ? calcScore(timeLeft) : 0;
+    const earned     = Math.max(0, base + bonus - hintPenalty);
+    setSelected(city ?? "__timeout__");
+    setRoundScores(prev => [...prev, earned]);
+    setStreak(newStreak);
+    if (isCorrect && newStreak >= 2 && newStreak > maxStreak) {
+      setMaxStreak(newStreak);
+      setNewRecord(true);
+    }
+    if (isCorrect) fetchFunFact(currentCam.city, currentCam.country);
+  }, [currentCam, timeLeft, stopTimer, fetchFunFact, streak, maxStreak, hintPenalty]);
+
+  // ── NEXT ROUND ───────────────────────────────────────────────────────────
+  const nextRound = useCallback(async () => {
+    const isLast     = roundIdx + 1 >= roundCount;
+    const finalScore = roundScores.reduce((a, b) => a + b, 0);
+    if (isLast) {
+      if (isDuel && duelMeta) {
+        if (!duelMeta.challenger_done) {
+          await db.saveDuel(duelCode, { ...duelMeta, challenger_score: finalScore, challenger_name: username, challenger_done: true, status: "waiting" });
+          setDuelResult({ role: "challenger", myScore: finalScore, duelCode });
+        } else {
+          await db.saveDuel(duelMeta.code, { ...duelMeta, opponent_score: finalScore, opponent_name: username, status: "done" });
+          setDuelResult({ role: "opponent", myScore: finalScore, opponentScore: duelMeta.challenger_score, opponentName: duelMeta.challenger_name });
+        }
+        setScreen("duel-result"); return;
+      }
+      saveStats(roundScores, sequence, pool, maxStreak);
+      await db.addScore({ name: username, score: finalScore, date: new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-GB") });
+      setScreen("gameover");
+    } else {
+      const next = roundIdx + 1;
+      setRoundIdx(next);
+      setOptions(getOptions(pool[sequence[next]], pool));
+      setTimeLeft(ROUND_TIME); setSelected(null);
+    }
+  }, [roundIdx, roundCount, roundScores, isDuel, duelMeta, username, duelCode, sequence, pool, lang, maxStreak]);
+
+  // ── DUEL ─────────────────────────────────────────────────────────────────
+  const createDuel = useCallback(async () => {
+    const code = genCode();
+    const seq  = buildSeq(pool, rounds);
+    const data = { code, sequence: seq, rounds, challenger_name: username, challenger_score: 0, challenger_done: false, status: "pending", created_at: new Date().toISOString() };
+    await db.saveDuel(code, data);
+    setDuelCode(code); setDuelMeta(data);
+    startGame(seq, { ...data, challenger_done: false });
+  }, [username, pool, rounds, startGame]);
+
+  const joinDuel = useCallback(async () => {
+    setJoinError("");
+    const data = await db.loadDuel(joinInput.toUpperCase());
+    if (!data)                  return setJoinError(t.codeNotFound);
+    if (data.status === "done") return setJoinError(t.duelEnded);
+    if (!data.challenger_done)  return setJoinError(t.challengerPlaying);
+    startGame(data.sequence, { ...data, code: joinInput.toUpperCase() });
+  }, [joinInput, pool, startGame, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── SHARE ─────────────────────────────────────────────────────────────────
+  const shareResult = useCallback(() => {
+    const canvas = generateShareCard(totalScore, roundScores, maxStreak, gameRounds, lang);
+    const shareText = lang === "de"
+      ? `Ich habe ${totalScore} Punkte in GeoWatch erreicht! Kannst du das toppen?`
+      : `I scored ${totalScore} points in GeoWatch! Can you beat that?`;
+    const shareUrl = "https://geowatchgame.lovable.app";
+    const download = () => {
+      const a = document.createElement("a");
+      a.download = "geowatch-result.png";
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    };
+    if (navigator.share) {
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], "geowatch-result.png", { type: "image/png" });
+        const withFile = { files: [file], title: "GeoWatch", text: shareText, url: shareUrl };
+        try {
+          if (navigator.canShare?.(withFile)) { await navigator.share(withFile); return; }
+          await navigator.share({ title: "GeoWatch", text: shareText, url: shareUrl });
+        } catch { download(); }
+      });
+    } else {
+      download();
+    }
+  }, [totalScore, roundScores, maxStreak, gameRounds, lang]);
+
+  // ── HINT HANDLERS ────────────────────────────────────────────────────────
+  const useContHint = useCallback(() => {
+    if (hintContUsed) return;
+    setHintContUsed(true);
+    setHintPenalty(prev => prev + 150);
+  }, [hintContUsed]);
+
+  const useClimHint = useCallback(() => {
+    if (hintClimUsed) return;
+    setHintClimUsed(true);
+    setHintPenalty(prev => prev + 200);
+    fetchClimateHint();
+  }, [hintClimUsed, fetchClimateHint]);
+
+  // ── STYLES ────────────────────────────────────────────────────────────────
+  const S = {
+    app:     { minHeight:"100vh", background:"#07080d", color:"#c8d0d8", fontFamily:"'Inter',system-ui,sans-serif", display:"flex", flexDirection:"column", alignItems:"center" },
+    scan:    { position:"fixed", inset:0, background:"repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,180,0.012) 2px,rgba(0,255,180,0.012) 4px)", pointerEvents:"none", zIndex:9999 },
+    hdr:     { width:"100%", maxWidth:900, padding:"20px 24px 0", display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:24 },
+    logo:    { fontSize:22, fontWeight:900, letterSpacing:"0.15em", color:"#00ffb3", textShadow:"0 0 20px rgba(0,255,179,0.6)", fontFamily:"'Courier New',Courier,monospace" },
+    logoBtn: { fontSize:22, fontWeight:900, letterSpacing:"0.15em", color:"#00ffb3", textShadow:"0 0 20px rgba(0,255,179,0.6)", cursor:"pointer", fontFamily:"'Courier New',Courier,monospace" },
+    sub:     { fontSize:11, color:"#445566", letterSpacing:"0.2em", fontFamily:"'Courier New',Courier,monospace" },
+    card:    { width:"100%", maxWidth:900, padding:"20px 24px", display:"flex", flexDirection:"column", gap:14 },
+    inp:     { background:"rgba(0,255,179,0.05)", border:"1px solid rgba(0,255,179,0.3)", borderRadius:4, color:"#c8d0d8", padding:"12px 16px", fontSize:14, fontFamily:"'Inter',system-ui,sans-serif", outline:"none", width:"100%", boxSizing:"border-box" },
+    btn:     (v="p") => ({ padding:"12px 24px", borderRadius:4, border:v==="p"?"none":"1px solid rgba(0,255,179,0.4)", background:v==="p"?"linear-gradient(135deg,#00ffb3,#00c8ff)":"transparent", color:v==="p"?"#07080d":"#00ffb3", fontFamily:"'Courier New',Courier,monospace", fontWeight:900, fontSize:13, letterSpacing:"0.15em", cursor:"pointer" }),
+    div:     { height:1, background:"rgba(0,255,179,0.1)" },
+    stitle:  { fontSize:12, letterSpacing:"0.15em", color:"#445566", textTransform:"uppercase" },
+    pill:    { display:"inline-block", padding:"3px 10px", borderRadius:20, background:"rgba(0,255,179,0.1)", border:"1px solid rgba(0,255,179,0.3)", fontSize:11, color:"#00ffb3", fontFamily:"'Courier New',Courier,monospace" },
+    g2:      { display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 },
+    score:   { fontSize:36, fontWeight:900, color:"#00ffb3", textShadow:"0 0 30px rgba(0,255,179,0.5)", textAlign:"center", fontFamily:"'Courier New',Courier,monospace" },
+    tbBar:   (p) => ({ height:4, background:`linear-gradient(90deg,${p>.5?"#00ffb3":p>.25?"#ffcc00":"#ff4455"} ${p*100}%,#1a1f2e ${p*100}%)`, borderRadius:2, transition:"background 0.3s" }),
+    optBtn:  (st) => ({ padding:"14px 20px", borderRadius:4, border:`1px solid ${st==="c"?"#00ffb3":st==="w"?"#ff4455":"rgba(255,255,255,0.1)"}`, background:st==="c"?"rgba(0,255,179,0.15)":st==="w"?"rgba(255,68,85,0.15)":"rgba(255,255,255,0.03)", color:st==="c"?"#00ffb3":st==="w"?"#ff4455":"#c8d0d8", cursor:selected?"default":"pointer", fontSize:16, fontFamily:"'Inter',system-ui,sans-serif", fontWeight:600, textAlign:"left", transition:"all 0.15s" }),
+    lbRow:   (i) => ({ display:"flex", alignItems:"center", gap:12, padding:"10px 16px", background:i===0?"rgba(0,255,179,0.08)":"rgba(255,255,255,0.02)", borderRadius:4, border:i===0?"1px solid rgba(0,255,179,0.3)":"1px solid rgba(255,255,255,0.05)" }),
+    code:    { fontSize:34, fontWeight:900, letterSpacing:"0.4em", color:"#00ffb3", textShadow:"0 0 30px rgba(0,255,179,0.6)", textAlign:"center", padding:"18px 0", fontFamily:"'Courier New',Courier,monospace" },
+    infoBox: { background:"rgba(0,255,179,0.04)", border:"1px solid rgba(0,255,179,0.15)", borderRadius:4, padding:"14px 16px", fontSize:13, color:"#6677aa", lineHeight:2 },
+    errBox:  { background:"rgba(255,68,85,0.08)", border:"1px solid rgba(255,68,85,0.3)", borderRadius:4, padding:"12px 16px", fontSize:13, color:"#ff8899", lineHeight:1.8 },
+    warnBox: { background:"rgba(255,170,0,0.08)", border:"1px solid rgba(255,170,0,0.3)", borderRadius:4, padding:"10px 14px", fontSize:12, color:"#ffcc66" },
+    rndBtn:  (sel) => ({ padding:"12px", borderRadius:4, border:`1px solid ${sel?"#00ffb3":"rgba(255,255,255,0.1)"}`, background:sel?"rgba(0,255,179,0.12)":"rgba(255,255,255,0.02)", color:sel?"#00ffb3":"#6677aa", fontFamily:"'Courier New',Courier,monospace", fontWeight:900, fontSize:13, letterSpacing:"0.1em", cursor:"pointer", textAlign:"center", transition:"all 0.15s" }),
+    rgnBtn:  (sel) => ({ padding:"7px 12px", borderRadius:4, border:`1px solid ${sel?"#00ffb3":"rgba(255,255,255,0.1)"}`, background:sel?"rgba(0,255,179,0.12)":"rgba(255,255,255,0.02)", color:sel?"#00ffb3":"#6677aa", fontFamily:"'Courier New',Courier,monospace", fontWeight:700, fontSize:12, cursor:"pointer", transition:"all 0.15s" }),
+    langBtn: (active) => ({ padding:"4px 10px", borderRadius:3, border:`1px solid ${active?"rgba(0,255,179,0.6)":"rgba(0,255,179,0.2)"}`, background:active?"rgba(0,255,179,0.15)":"transparent", color:active?"#00ffb3":"#445566", fontFamily:"'Courier New',Courier,monospace", fontWeight:900, fontSize:11, letterSpacing:"0.1em", cursor:"pointer" }),
+    toggleBtn: (on) => ({ padding:"5px 14px", borderRadius:20, border:`1px solid ${on?"rgba(0,255,179,0.6)":"rgba(255,255,255,0.2)"}`, background:on?"rgba(0,255,179,0.15)":"rgba(255,255,255,0.04)", color:on?"#00ffb3":"#6677aa", fontFamily:"'Courier New',Courier,monospace", fontWeight:900, fontSize:11, letterSpacing:"0.1em", cursor:"pointer" }),
+    hintBtn: { padding:"8px 14px", borderRadius:4, border:"1px solid rgba(255,204,0,0.3)", background:"rgba(255,204,0,0.05)", color:"#ffcc66", fontFamily:"'Inter',system-ui,sans-serif", fontSize:13, fontWeight:600, cursor:"pointer", flex:1 },
+    hintBox: { padding:"10px 14px", borderRadius:4, border:"1px solid rgba(255,204,0,0.2)", background:"rgba(255,204,0,0.05)", fontSize:13, color:"#ffe08a", lineHeight:1.6 },
+  };
+
+  const optSt = (city) => !selected ? "n" : city === camLabel(currentCam) ? "c" : city === selected ? "w" : "n";
+
+  const LangSwitch = () => (
+    <div style={{ display:"flex", gap:4 }}>
+      <button style={S.langBtn(lang==="en")} onClick={() => setLang("en")}>EN</button>
+      <button style={S.langBtn(lang==="de")} onClick={() => setLang("de")}>DE</button>
+    </div>
+  );
+
+  const REGIONS = [
+    { key:"all",        label: t.regionAll },
+    { key:"europe",     label: t.regionEurope },
+    { key:"americas",   label: t.regionAmericas },
+    { key:"asia",       label: t.regionAsia },
+    { key:"africa",     label: t.regionAfrica },
+    { key:"oceania",    label: t.regionOceania },
+    { key:"middleeast", label: t.regionMiddleEast },
+  ];
+
+  // ── SCREENS ──────────────────────────────────────────────────────────────
+
+  if (screen === "boot") return (
+    <div style={{ ...S.app, justifyContent:"center" }}>
+      <div style={S.scan} />
+      <div style={S.logo}>GEOWATCH</div>
+      <div style={{ fontSize:11, color:"#334455", marginTop:8 }}>{t.initializing}</div>
+    </div>
+  );
+
+  if (screen === "setup") return (
+    <div style={S.app}>
+      <div style={S.scan} />
+      <div style={S.hdr}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={pool.length > 0 ? S.logoBtn : S.logo} onClick={() => pool.length > 0 && setScreen("home")}>GEOWATCH</div>
+          <LangSwitch />
+        </div>
+      </div>
+      <div style={S.card}>
+        <div style={{ textAlign:"center", padding:"12px 0 4px" }}>
+          <div style={{ fontSize:13, color:"#6677aa", lineHeight:1.8 }}>
+            {lang === "en"
+              ? <>Uses the <strong style={{color:"#00ffb3"}}>Windy Webcams API</strong> — over <strong style={{color:"#00ffb3"}}>40,000 cameras</strong> worldwide.</>
+              : <>Nutzt die <strong style={{color:"#00ffb3"}}>Windy Webcams API</strong> — über <strong style={{color:"#00ffb3"}}>40.000 Kameras</strong> weltweit.</>
+            }
+          </div>
+        </div>
+        <div style={S.div} />
+        {!supabase && <div style={S.errBox}><strong style={{color:"#ffaa88"}}>{t.supabaseError}</strong><br/>{t.supabaseErrorDesc}</div>}
+        <div style={S.stitle}>{t.step1}</div>
+        <div style={S.infoBox}>
+          {lang === "en" ? (
+            <>1. Open <a href="https://api.windy.com/keys" target="_blank" rel="noreferrer" style={{color:"#00ffb3"}}>api.windy.com/keys</a> and register<br/>2. <em>"Add new key"</em> → Type: <strong>Webcams</strong><br/>3. Copy the key — it takes ~1–2 min to activate</>
+          ) : (
+            <>1. Öffne <a href="https://api.windy.com/keys" target="_blank" rel="noreferrer" style={{color:"#00ffb3"}}>api.windy.com/keys</a> und registriere dich<br/>2. <em>"Add new key"</em> → Typ: <strong>Webcams</strong><br/>3. Key kopieren — er braucht ca. 1–2 Min. bis er aktiv ist</>
+          )}
+        </div>
+        <div style={S.stitle}>{t.step2}</div>
+        <input style={S.inp} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          value={apiInput} onChange={e => setApiInput(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && submitKey()} />
+        {apiError && <div style={S.errBox}><strong style={{color:"#ffaa88"}}>{t.errorLabel}</strong><br/>{apiError}</div>}
+        <button style={{ ...S.btn("p"), opacity:(apiInput.trim()&&supabase)?1:0.4, padding:"14px" }}
+          disabled={!apiInput.trim()||!supabase} onClick={submitKey}>{t.loadCameras}</button>
+        {pool.length > 0 && <button style={S.btn("g")} onClick={() => setScreen("home")}>{t.useCache(pool.length)}</button>}
+      </div>
+    </div>
+  );
+
+  if (screen === "loading") return (
+    <div style={{ ...S.app, justifyContent:"center" }}>
+      <div style={S.scan} />
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:20, padding:24 }}>
+        <div style={S.logo}>GEOWATCH</div>
+        <div style={{ fontSize:12, color:"#445566", letterSpacing:"0.2em" }}>{t.loadingCameras}</div>
+        <div style={{ width:280, height:4, background:"#1a1f2e", borderRadius:2, overflow:"hidden" }}>
+          <div style={{ height:"100%", width:`${(loadProg[0]/loadProg[1])*100}%`, background:"linear-gradient(90deg,#00ffb3,#00c8ff)", borderRadius:2, transition:"width 0.4s" }} />
+        </div>
+        <div style={{ fontSize:11, color:"#334455" }}>Batch {loadProg[0]} / {loadProg[1]}</div>
+      </div>
+    </div>
+  );
+
+  if (screen === "home") return (
+    <div style={S.app}>
+      <div style={S.scan} />
+      <div style={S.hdr}>
+        <div>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <div style={S.logo}>GEOWATCH</div>
+            <LangSwitch />
+          </div>
+          <div style={S.sub}>GLOBAL SURVEILLANCE GAME</div>
+        </div>
+        <div style={{ display:"flex", gap:8 }}>
+          <button style={S.btn("g")} onClick={() => setScreen("faq")}>FAQ</button>
+          <button style={S.btn("g")} onClick={() => setScreen("stats")}>{t.stats}</button>
+          <button style={S.btn("g")} onClick={() => setScreen("leaderboard")}>{t.leaderboard}</button>
+        </div>
+      </div>
+      <div style={S.card}>
+        <div style={{ textAlign:"center", padding:"12px 0 4px" }}>
+          <div style={{ fontSize:13, color:"#6677aa", lineHeight:1.7 }}>{t.tagline}</div>
+          <div style={{ marginTop:10, display:"flex", gap:8, justifyContent:"center", flexWrap:"wrap" }}>
+            <span style={S.pill}>{camLoading ? "⟳ LOADING CAMERAS..." : t.camerasLoaded(pool.length)}</span>
+          </div>
+          {camLoading && (
+            <div style={{ width:"100%", height:3, background:"#1a1f2e", borderRadius:2, overflow:"hidden", marginTop:6 }}>
+              <div style={{ height:"100%", width:`${(loadProg[0]/loadProg[1])*100}%`, background:"linear-gradient(90deg,#00ffb3,#00c8ff)", borderRadius:2, transition:"width 0.4s" }} />
+            </div>
+          )}
+        </div>
+        <div style={S.div} />
+        <div style={S.stitle}>{t.scoring}</div>
+        <div style={{ background:"rgba(0,255,179,0.04)", border:"1px solid rgba(0,255,179,0.12)", borderRadius:4, padding:"14px 16px", fontSize:13, lineHeight:2.1 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"auto 1fr", gap:"0 16px" }}>
+            <span style={{ color:"#00ffb3", fontWeight:700 }}>500</span><span style={{ color:"#6677aa" }}>{t.basePoints}</span>
+            <span style={{ color:"#00ffb3", fontWeight:700 }}>+ 0–500</span><span style={{ color:"#6677aa" }}>{t.speedBonus}</span>
+            <span style={{ color:"#00ffb3", fontWeight:700 }}>= 1,000</span><span style={{ color:"#6677aa" }}>{t.maxPoints}</span>
+            <span style={{ color:"#ff4455", fontWeight:700 }}>0</span><span style={{ color:"#6677aa" }}>{t.zeroPoints}</span>
+          </div>
+        </div>
+        <div style={S.div} />
+        <div style={S.stitle}>{t.selectRounds}</div>
+        <div style={S.g2}>
+          <button style={S.rndBtn(rounds===5)}  onClick={() => setRounds(5)}>{t.fiveRounds}<br/><span style={{ fontSize:10, opacity:0.6 }}>{t.max5k}</span></button>
+          <button style={S.rndBtn(rounds===10)} onClick={() => setRounds(10)}>{t.tenRounds}<br/><span style={{ fontSize:10, opacity:0.6 }}>{t.max10k}</span></button>
+        </div>
+
+        {/* ── Feature 1: REGION FILTER ── */}
+        <div style={S.div} />
+        <div style={S.stitle}>{t.region}</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+          {REGIONS.map(r => (
+            <button key={r.key} style={S.rgnBtn(region===r.key)} onClick={() => { setRegion(r.key); setRegionWarning(""); }}>{r.label}</button>
+          ))}
+        </div>
+        {regionWarning && <div style={S.warnBox}>⚠ {regionWarning}</div>}
+
+        {/* ── Feature 3: ZOOM MODE ── */}
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <span style={{ fontSize:13, color:"#6677aa", letterSpacing:"0.05em" }}>🔍 {t.zoomModeLabel}</span>
+          <button style={S.toggleBtn(zoomMode)} onClick={() => setZoomMode(v => !v)}>{zoomMode ? "ON" : "OFF"}</button>
+        </div>
+
+        <div style={S.div} />
+        <div style={S.stitle}>{t.operativeId}</div>
+        <input style={S.inp} placeholder={t.usernamePlaceholder}
+          value={username} onChange={e => setUsername(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && username.trim() && startGame()} />
+        <button style={{ ...S.btn("p"), opacity:(username.trim()&&!camLoading)?1:0.4, padding:"14px", fontSize:15 }}
+          disabled={!username.trim()||camLoading} onClick={() => startGame()}>{t.startMission(rounds)}</button>
+        <div style={S.div} />
+        <div style={S.stitle}>{t.duels}</div>
+        <div style={S.g2}>
+          <button style={{ ...S.btn("g"), opacity:(username.trim()&&!camLoading)?1:0.4 }} disabled={!username.trim()||camLoading} onClick={createDuel}>{t.createDuel}</button>
+          <button style={S.btn("g")} onClick={() => setScreen("join-duel")}>{t.joinDuelBtn}</button>
+        </div>
+        {showApiBtn && <button style={{ ...S.btn("g"), fontSize:11, opacity:0.5 }} onClick={() => setScreen("setup")}>{t.reloadCameras}</button>}
+      </div>
+    </div>
+  );
+
+  if (screen === "join-duel") return (
+    <div style={S.app}>
+      <div style={S.scan} />
+      <div style={S.hdr}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
+          <LangSwitch />
+        </div>
+        <button style={S.btn("g")} onClick={() => { setJoinError(""); setScreen("home"); }}>{t.back}</button>
+      </div>
+      <div style={S.card}>
+        <div style={S.stitle}>{t.joinDuelTitle}</div>
+        <div style={S.stitle}>{t.yourName}</div>
+        <input style={S.inp} placeholder="Username..." value={username} onChange={e => setUsername(e.target.value)} />
+        <div style={S.stitle}>{t.duelCode}</div>
+        <input style={{ ...S.inp, fontSize:24, letterSpacing:"0.3em", textTransform:"uppercase", fontFamily:"'Courier New',Courier,monospace" }}
+          placeholder="XXXXXX" value={joinInput} onChange={e => setJoinInput(e.target.value.toUpperCase())} maxLength={6} />
+        {joinError && <div style={S.errBox}>⚠ {joinError}</div>}
+        <button style={{ ...S.btn("p"), opacity:(username.trim()&&joinInput.length===6)?1:0.4 }}
+          disabled={!username.trim()||joinInput.length!==6} onClick={joinDuel}>{t.accept}</button>
+      </div>
+    </div>
+  );
+
+  if (screen === "game" && currentCam) {
+    const pct = timeLeft / ROUND_TIME;
+    const ans = selected !== null;
+    const isCorrect = selected === camLabel(currentCam);
+    const earnedBase = isCorrect ? calcScore(timeLeft + 1) : 0;
+    const earnedBonus = isCorrect ? calcStreakBonus(streak) : 0;
+    return (
+      <div style={S.app}>
+        <style>{`
+          @keyframes gw-spin   { to { transform: rotate(360deg); } }
+          @keyframes gw-zoom   { from { transform: scale(3); } to { transform: scale(1); } }
+          @keyframes gw-record { 0%{opacity:0;transform:translateY(-4px)} 15%{opacity:1;transform:translateY(0)} 75%{opacity:1} 100%{opacity:0} }
+        `}</style>
+        <div style={S.scan} />
+        <div style={S.hdr}>
+          <div>
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
+              <LangSwitch />
+              {isDuel  && <span style={S.pill}>{t.duelBadge}</span>}
+              {zoomMode && <span style={{ ...S.pill, borderColor:"rgba(0,200,255,0.4)", color:"#00c8ff" }}>{t.zoomHint}</span>}
+            </div>
+          </div>
+          <div style={{ textAlign:"right" }}>
+            <div style={{ fontSize:11, color:"#445566", fontFamily:"'Courier New',Courier,monospace" }}>{t.roundLabel}</div>
+            <div style={{ fontSize:22, fontWeight:900, color:"#00ffb3", fontFamily:"'Courier New',Courier,monospace" }}>{roundIdx+1} / {roundCount}</div>
+          </div>
+        </div>
+        <div style={S.card}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+            <div>
+              <div style={{ fontSize:11, color:"#445566" }}>{t.scoreLabel}: <span style={{ color:"#c8d0d8", fontWeight:700 }}>{totalScore}</span></div>
+              {streak >= 2 && (
+                <div style={{ fontSize:12, color: streak >= 5 ? "#ff6644" : "#ffaa00", fontFamily:"'Courier New',Courier,monospace", letterSpacing:"0.1em", marginTop:2 }}>
+                  {t.streakLabel(streak)}
+                </div>
+              )}
+              {newRecord && (
+                <div style={{ fontSize:10, color:"#ffcc00", fontFamily:"'Courier New',Courier,monospace", letterSpacing:"0.2em", marginTop:2, animation:"gw-record 3s ease-out forwards" }}>
+                  ⭐ {t.newRecord}
+                </div>
+              )}
+            </div>
+            <div style={{ fontSize:18, fontWeight:900, color:pct>.5?"#00ffb3":pct>.25?"#ffcc00":"#ff4455", fontFamily:"'Courier New',Courier,monospace" }}>{timeLeft}s</div>
+          </div>
+          <div style={S.tbBar(pct)} />
+
+          {/* ── SNAPSHOT VIEWER ── */}
+          <div style={{ position:"relative", width:"100%", aspectRatio:"16/9", background:"#0a0c12", borderRadius:6, overflow:"hidden", border:"1px solid rgba(0,255,179,0.2)" }}>
+            <div style={{ position:"absolute", top:10, left:12, fontSize:10, letterSpacing:"0.18em", color:"#00ffb3", zIndex:20, background:"rgba(7,8,13,0.8)", padding:"2px 8px", borderRadius:3, fontFamily:"'Courier New',Courier,monospace" }}>
+              ● CAM | ID {currentCam.id.slice(-5)}
+            </div>
+            {imgUnusable && (
+              <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", background:"rgba(7,8,13,0.9)", zIndex:30, gap:8 }}>
+                <div style={{ fontSize:12, color:"#ffcc66", letterSpacing:"0.2em", fontFamily:"'Courier New',Courier,monospace" }}>⟳ SKIPPING CAMERA...</div>
+                <div style={{ fontSize:11, color:"#445566" }}>Image unreadable</div>
+              </div>
+            )}
+            {camImgUrl ? (
+              <img key={currentCam.id} src={camImgUrl} alt="Webcam Snapshot"
+                style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", transformOrigin: zoomMode ? zoomOrigin : undefined, animation: zoomMode ? "gw-zoom 30s linear forwards" : undefined }}
+                onLoad={(e) => { setImgLoading(false); const { naturalWidth: nw, naturalHeight: nh } = e.currentTarget; if (nw < 50 || nh < 50) setImgUnusable(true); }}
+                onError={handleImgError} />
+            ) : (
+              <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", color:"#334455", fontSize:11, letterSpacing:"0.2em" }}>
+                {t.noImage}
+              </div>
+            )}
+          </div>
+
+          {/* ── Feature 4: HINT BUTTONS ── */}
+          {!ans && (
+            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+              <div style={{ display:"flex", gap:8 }}>
+                <button style={{ ...S.hintBtn, opacity: hintContUsed ? 0.4 : 1 }} disabled={hintContUsed} onClick={useContHint}>{t.hintContinent}</button>
+                <button style={{ ...S.hintBtn, opacity: hintClimUsed ? 0.4 : 1 }} disabled={hintClimUsed} onClick={useClimHint}>{t.hintClimate}</button>
+              </div>
+              {hintContUsed && (
+                <div style={S.hintBox}>
+                  <span style={{ fontSize:11, color:"#ffcc66", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace" }}>{t.hintContinentLabel}: </span>
+                  {currentCam.continent}
+                </div>
+              )}
+              {hintClimUsed && (
+                <div style={S.hintBox}>
+                  <span style={{ fontSize:11, color:"#ffcc66", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace" }}>{t.hintClimateLabel}: </span>
+                  {hintClimLoad ? <em style={{ color:"#6677aa" }}>{t.hintLoading}</em> : hintClimText}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div style={{ fontSize:13, color:"#445566", letterSpacing:"0.1em" }}>{t.whereIsCamera}</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            {options.map(city => {
+              const st = optSt(city);
+              return (
+                <button key={city} style={S.optBtn(st)} onClick={() => !ans && handleAnswer(city)}>
+                  {st==="c"?"✓ ":st==="w"?"✗ ":"○ "}{city}
+                </button>
+              );
+            })}
+          </div>
+
+          {ans && (
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              <div style={{ padding:"12px 16px", background:"rgba(0,255,179,0.05)", borderRadius:4, border:"1px solid rgba(0,255,179,0.15)" }}>
+                <div style={{ fontSize:11, color:"#445566", marginBottom:4 }}>{t.locationRevealed}</div>
+                <div style={{ fontSize:18, fontWeight:900, color:"#00ffb3" }}>{currentCam.flag} {currentCam.city}, {currentCam.country}</div>
+                {isCorrect ? (
+                  <div style={{ marginTop:6, display:"flex", flexDirection:"column", gap:2 }}>
+                    <div style={{ fontSize:14, color:"#00ffb3" }}>{t.pointsEarned(earnedBase)}</div>
+                    {earnedBonus > 0 && <div style={{ fontSize:13, color:"#ffaa00" }}>{t.streakBonus(earnedBonus)}</div>}
+                    {hintPenalty > 0 && <div style={{ fontSize:13, color:"#ff8844" }}>{t.hintPenalty(hintPenalty)}</div>}
+                  </div>
+                ) : (
+                  <div style={{ fontSize:14, color:"#ff4455", marginTop:6 }}>{t.noPoints}</div>
+                )}
+              </div>
+
+              {currentCam.lat != null && currentCam.lon != null && (
+                <iframe
+                  title="location-map"
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${currentCam.lon-0.5},${currentCam.lat-0.5},${currentCam.lon+0.5},${currentCam.lat+0.5}&layer=mapnik&marker=${currentCam.lat},${currentCam.lon}`}
+                  style={{ width:"100%", height:200, borderRadius:6, border:"1px solid rgba(0,255,179,0.2)", display:"block" }}
+                  loading="lazy"
+                />
+              )}
+
+              {isCorrect && (
+                funFactLoad ? (
+                  <div style={{ padding:"12px 16px", background:"rgba(0,255,179,0.03)", borderRadius:4, border:"1px solid rgba(0,255,179,0.1)", display:"flex", alignItems:"center", gap:10 }}>
+                    <div style={{ width:14, height:14, border:"2px solid #00ffb3", borderTopColor:"transparent", borderRadius:"50%", animation:"gw-spin 0.8s linear infinite", flexShrink:0 }} />
+                    <span style={{ fontSize:12, color:"#445566", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace" }}>{t.loadingFunFact}</span>
+                  </div>
+                ) : funFactError ? (
+                  <div style={{ padding:"12px 16px", background:"rgba(255,68,85,0.08)", borderRadius:4, border:"1px solid rgba(255,68,85,0.3)", fontSize:12, color:"#ff8899", wordBreak:"break-all" }}>
+                    <strong style={{ letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace" }}>{t.funFactError}</strong><br/>{funFactError}
+                  </div>
+                ) : funFact ? (
+                  <div style={{ padding:"16px 20px", background:"rgba(0,255,179,0.06)", borderRadius:6, border:"1px solid rgba(0,255,179,0.25)" }}>
+                    <div style={{ fontSize:11, color:"#00ffb3", letterSpacing:"0.2em", marginBottom:10, fontFamily:"'Courier New',Courier,monospace" }}>{t.funFact}</div>
+                    <div style={{ fontSize:15, color:"#d0d8e0", lineHeight:1.8 }}>{funFact.fact}</div>
+                    {funFact.source && (
+                      <a href={funFact.url} target="_blank" rel="noreferrer" style={{ display:"block", fontSize:12, color:"#00ffb3", textDecoration:"none", marginTop:8 }}>↗ {funFact.source}</a>
+                    )}
+                  </div>
+                ) : null
+              )}
+              <button style={S.btn("p")} onClick={nextRound}>{roundIdx+1<roundCount ? t.nextRound : t.results}</button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === "gameover") return (
+    <div style={S.app}>
+      <div style={S.scan} />
+      <div style={S.hdr}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
+          <LangSwitch />
+        </div>
+      </div>
+      <div style={S.card}>
+        <div style={{ textAlign:"center", padding:"12px 0" }}>
+          <div style={{ fontSize:11, color:"#445566", letterSpacing:"0.2em", marginBottom:10, fontFamily:"'Courier New',Courier,monospace" }}>{t.missionComplete(gameRounds)}</div>
+          <div style={S.score}>{totalScore}</div>
+          <div style={{ fontSize:12, color:"#6677aa", marginTop:4 }}>{t.pointsMax(gameRounds * MAX_SCORE)}</div>
+          {maxStreak >= 2 && <div style={{ fontSize:12, color:"#ffaa00", marginTop:6, fontFamily:"'Courier New',Courier,monospace" }}>{t.streakLabel(maxStreak)} MAX</div>}
+        </div>
+        <div style={S.div} />
+        <div style={S.stitle}>{t.roundSummary}</div>
+        {roundScores.map((s, i) => (
+          <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 12px", background:"rgba(255,255,255,0.02)", borderRadius:4, border:"1px solid rgba(255,255,255,0.05)" }}>
+            <span style={{ fontSize:13, color:"#6677aa" }}>{t.roundN(i+1)} · {pool[sequence[i]]?.city} {pool[sequence[i]]?.flag}</span>
+            <span style={{ fontWeight:700, color:s>0?"#00ffb3":"#ff4455" }}>{s>0?`+${s}`:"0"}</span>
+          </div>
+        ))}
+        <div style={S.div} />
+        <div style={S.g2}>
+          <button style={S.btn("p")} onClick={() => startGame()}>{t.playAgain}</button>
+          <button style={{ ...S.btn("g"), borderColor:"rgba(0,200,255,0.5)", color:"#00c8ff" }} onClick={shareResult}>{t.shareResult}</button>
+        </div>
+        <div style={S.g2}>
+          <button style={S.btn("g")} onClick={() => setScreen("leaderboard")}>{t.leaderboard}</button>
+          <button style={S.btn("g")} onClick={() => setScreen("home")}>{t.mainMenu}</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (screen === "leaderboard") return (
+    <div style={S.app}>
+      <div style={S.scan} />
+      <div style={S.hdr}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
+          <LangSwitch />
+        </div>
+        <button style={S.btn("g")} onClick={() => setScreen("home")}>{t.back}</button>
+      </div>
+      <div style={S.card}>
+        <div style={{ fontSize:18, fontWeight:900, letterSpacing:"0.2em", color:"#c8d0d8", fontFamily:"'Courier New',Courier,monospace" }}>{t.leaderboardTitle}</div>
+        {lbLoading ? (
+          <div style={{ textAlign:"center", color:"#445566", padding:40 }}>{t.loading}</div>
+        ) : leaderboard.length === 0 ? (
+          <div style={{ textAlign:"center", color:"#445566", padding:40 }}>{t.noEntries}</div>
+        ) : leaderboard.map((e, i) => (
+          <div key={i} style={S.lbRow(i)}>
+            <div style={{ fontSize:14, fontWeight:900, color:i===0?"#ffcc00":i===1?"#aaaacc":i===2?"#cc8866":"#445566", minWidth:24, fontFamily:"'Courier New',Courier,monospace" }}>{i===0?"◈":i===1?"◇":i===2?"◆":`${i+1}.`}</div>
+            <div style={{ flex:1, fontSize:15 }}>{e.name}</div>
+            <div style={{ fontSize:13, color:"#6677aa" }}>{e.date}</div>
+            <div style={{ fontWeight:900, color:"#00ffb3", minWidth:60, textAlign:"right", fontFamily:"'Courier New',Courier,monospace" }}>{e.score}</div>
+          </div>
+        ))}
+        <button style={{ ...S.btn("p"), marginTop:8 }} onClick={() => startGame()}>{t.play}</button>
+        <div style={S.div} />
+        <div style={S.stitle}>{t.badgeRanking}</div>
+        <div style={{ background:"rgba(0,255,179,0.04)", border:"1px solid rgba(0,255,179,0.12)", borderRadius:4, padding:"12px 16px", fontSize:12, lineHeight:2.2 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"auto 1fr", gap:"0 14px" }}>
+            <span>🏅</span><span style={{ color:"#6677aa" }}>1–9 {t.perfectRounds}</span>
+            <span>⭐</span><span style={{ color:"#6677aa" }}>10–19 {t.perfectRounds}</span>
+            <span>💎</span><span style={{ color:"#6677aa" }}>20–49 {t.perfectRounds}</span>
+            <span>👑</span><span style={{ color:"#6677aa" }}>50+ {t.perfectRounds}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (screen === "stats") {
+    const st = ls.get(STATS_KEY) || emptyStats();
+    const accPct = st.totalAnswers > 0 ? Math.round(st.correctAnswers / st.totalAnswers * 100) : 0;
+    return (
+      <div style={S.app}>
+        <div style={S.scan} />
+        <div style={S.hdr}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
+            <LangSwitch />
+          </div>
+          <button style={S.btn("g")} onClick={() => setScreen("home")}>{t.back}</button>
+        </div>
+        <div style={S.card}>
+          <div style={{ fontSize:18, fontWeight:900, letterSpacing:"0.2em", color:"#c8d0d8", fontFamily:"'Courier New',Courier,monospace" }}>{t.statsTitle}</div>
+          {st.gamesPlayed === 0 ? (
+            <div style={{ textAlign:"center", color:"#445566", padding:40 }}>{t.noStats}</div>
+          ) : (
+            <>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                {[
+                  [t.gamesPlayed,  st.gamesPlayed],
+                  [t.totalScore,   st.totalScore.toLocaleString()],
+                  [t.bestGame,     st.bestScore.toLocaleString()],
+                  [t.accuracy,     `${accPct}%`],
+                  [t.bestStreak,   `🔥 ${st.bestStreak}x`],
+                  [t.correct,      `${st.correctAnswers} / ${st.totalAnswers}`],
+                ].map(([label, val]) => (
+                  <div key={label} style={{ background:"rgba(0,255,179,0.04)", border:"1px solid rgba(0,255,179,0.12)", borderRadius:4, padding:"12px 14px" }}>
+                    <div style={{ fontSize:10, color:"#445566", letterSpacing:"0.15em", textTransform:"uppercase", marginBottom:4 }}>{label}</div>
+                    <div style={{ fontSize:20, fontWeight:900, color:"#00ffb3", fontFamily:"'Courier New',Courier,monospace" }}>{val}</div>
+                  </div>
+                ))}
+              </div>
+
+              {Object.keys(st.continentStats).length > 0 && (
+                <>
+                  <div style={S.div} />
+                  <div style={S.stitle}>{t.byContinent}</div>
+                  <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                    {Object.entries(st.continentStats).sort((a,b) => b[1].total - a[1].total).map(([cont, data]) => {
+                      const pct = data.total > 0 ? Math.round(data.correct / data.total * 100) : 0;
+                      return (
+                        <div key={cont}>
+                          <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
+                            <span style={{ color:"#c8d0d8" }}>{cont}</span>
+                            <span style={{ color:"#6677aa" }}>{pct}% &nbsp;({data.correct}/{data.total})</span>
+                          </div>
+                          <div style={{ height:5, background:"#1a1f2e", borderRadius:3, overflow:"hidden" }}>
+                            <div style={{ height:"100%", width:`${pct}%`, background:"linear-gradient(90deg,#00ffb3,#00c8ff)", borderRadius:3, transition:"width 0.4s" }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              <div style={S.div} />
+              <div style={S.stitle}>{t.recentGames}</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                {st.recentGames.map((g, i) => (
+                  <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 12px", background:"rgba(255,255,255,0.02)", borderRadius:4, border:"1px solid rgba(255,255,255,0.05)", fontSize:13 }}>
+                    <span style={{ color:"#6677aa" }}>{g.date}</span>
+                    <span style={{ color:"#6677aa" }}>{g.correct}/{g.rounds} {t.correct}</span>
+                    <span style={{ fontWeight:900, color:"#00ffb3", fontFamily:"'Courier New',Courier,monospace" }}>{g.score.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={S.div} />
+              <button style={{ ...S.btn("g"), fontSize:12, opacity:0.6 }} onClick={() => { ls.set(STATS_KEY, emptyStats()); setScreen("home"); }}>{t.resetStats}</button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === "faq") {
+    const items = FAQ_DATA[lang] || FAQ_DATA.en;
+    const toggle = (i) => setFaqOpen(prev => {
+      const next = new Set(prev);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
+    return (
+      <div style={S.app}>
+        <div style={S.scan} />
+        <div style={S.hdr}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
+            <LangSwitch />
+          </div>
+          <button style={S.btn("g")} onClick={() => setScreen("home")}>{t.back}</button>
+        </div>
+        <div style={S.card}>
+          <div style={{ fontSize:18, fontWeight:900, letterSpacing:"0.2em", color:"#c8d0d8", fontFamily:"'Courier New',Courier,monospace" }}>FAQ</div>
+          <div style={{ display:"flex", flexDirection:"column" }}>
+            {items.map(({ q, a }, i) => (
+              <div key={i} style={{ borderBottom:"1px solid rgba(0,255,179,0.08)" }}>
+                <button
+                  onClick={() => toggle(i)}
+                  style={{ width:"100%", background:"none", border:"none", padding:"16px 4px", display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12, cursor:"pointer", textAlign:"left" }}
+                >
+                  <span style={{ fontSize:14, fontWeight:700, color:"#00ffb3", lineHeight:1.5, flex:1 }}>{q}</span>
+                  <span style={{ fontSize:18, color:"#00ffb3", fontWeight:900, flexShrink:0, marginTop:1, fontFamily:"'Courier New',Courier,monospace", opacity:0.7 }}>{faqOpen.has(i) ? "−" : "+"}</span>
+                </button>
+                <div style={{ overflow:"hidden", maxHeight: faqOpen.has(i) ? "600px" : "0", transition:"max-height 0.3s ease" }}>
+                  <div style={{ padding:"0 4px 16px", fontSize:14, color:"#8899aa", lineHeight:1.8 }}>{a}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === "duel-result" && duelResult) {
+    const isCh = duelResult.role === "challenger";
+    return (
+      <div style={S.app}>
+        <div style={S.scan} />
+        <div style={S.hdr}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
+            <LangSwitch />
+          </div>
+        </div>
+        <div style={S.card}>
+          {isCh ? (
+            <>
+              <div style={{ textAlign:"center", padding:"12px 0" }}>
+                <div style={{ fontSize:11, color:"#445566", marginBottom:10, fontFamily:"'Courier New',Courier,monospace" }}>{t.yourScore}</div>
+                <div style={S.score}>{duelResult.myScore}</div>
+              </div>
+              <div style={{ padding:"16px", background:"rgba(0,255,179,0.05)", borderRadius:4, border:"1px solid rgba(0,255,179,0.2)" }}>
+                <div style={{ fontSize:11, color:"#445566", marginBottom:6, fontFamily:"'Courier New',Courier,monospace" }}>{t.codeForOpponent}</div>
+                <div style={S.code}>{duelResult.duelCode}</div>
+                <div style={{ fontSize:12, color:"#6677aa", textAlign:"center" }}>{t.opponentInstruction}</div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize:11, color:"#445566", textAlign:"center", padding:"10px 0", fontFamily:"'Courier New',Courier,monospace" }}>{t.result}</div>
+              <div style={S.g2}>
+                {[
+                  { label: t.you(username),        score:duelResult.myScore,       win:duelResult.myScore>=duelResult.opponentScore, color:"#00ffb3" },
+                  { label: duelResult.opponentName, score:duelResult.opponentScore, win:duelResult.opponentScore>duelResult.myScore,  color:"#ff4455" },
+                ].map(p => (
+                  <div key={p.label} style={{ padding:16, background:p.win?"rgba(0,255,179,0.08)":"rgba(255,255,255,0.02)", borderRadius:4, border:`1px solid ${p.win?"rgba(0,255,179,0.3)":"rgba(255,255,255,0.1)"}`, textAlign:"center" }}>
+                    <div style={{ fontSize:11, color:"#445566", marginBottom:4 }}>{p.label}</div>
+                    <div style={{ fontSize:28, fontWeight:900, color:p.color, fontFamily:"'Courier New',Courier,monospace" }}>{p.score}</div>
+                    {p.win && <div style={{ fontSize:11, color:p.color, marginTop:4, fontFamily:"'Courier New',Courier,monospace" }}>{t.winner}</div>}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          <div style={S.div} />
+          <div style={S.g2}>
+            <button style={S.btn("p")} onClick={() => startGame()}>{t.playSolo}</button>
+            <button style={S.btn("g")} onClick={() => setScreen("home")}>{t.menu}</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return <div style={{ color:"#00ffb3", padding:40 }}>{t.loading}</div>;
+}

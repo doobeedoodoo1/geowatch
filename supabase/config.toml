@@ -1,0 +1,2 @@
+[functions.windy-proxy]
+verify_jwt = false

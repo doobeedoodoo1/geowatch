@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(New-Item *)",
+      "PowerShell(npx supabase --version 2>&1)",
+      "WebSearch",
+      "WebFetch(domain:www.skylinewebcams.com)",
+      "WebFetch(domain:worldcams.tv)",
+      "WebFetch(domain:www.youtube.com)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:webcamlivestream.com)",
+      "WebFetch(domain:www.airbeam.tv)",
+      "WebFetch(domain:livecamatlas.org)",
+      "WebFetch(domain:japanzy.com)",
+      "WebFetch(domain:sakuralivecams.com)",
+      "Bash(npx supabase *)",
+      "Skill(claude-api)"
+    ]
+  }
+}
