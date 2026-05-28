@@ -326,12 +326,12 @@ const ls = {
 const db = {
   async loadLB() {
     if (!supabase) return [];
-    const { data, error } = await supabase.from("leaderboard").select("name,score,date").order("score", { ascending: false }).limit(20);
+    const { data } = await supabase.from("leaderboard").select("name,score,date,rounds").order("score", { ascending: false }).limit(20);
     return data || [];
   },
-  async addScore({ name, score, date }) {
+  async addScore({ name, score, date, rounds = 5 }) {
     if (!supabase) return;
-    await supabase.from("leaderboard").insert([{ name, score, date }]);
+    await supabase.from("leaderboard").insert([{ name, score, date, rounds }]);
   },
   async loadDuel(code)        { if (!supabase) return null; const { data } = await supabase.from("duels").select("*").eq("code", code).maybeSingle(); return data; },
   async saveDuel(code, payload) { if (supabase) await supabase.from("duels").upsert([{ code, ...payload }]); },
@@ -840,7 +840,7 @@ export default function GeoWatch() {
         setScreen("duel-result"); return;
       }
       saveStats(roundScores, sequence, pool, maxStreak);
-      await db.addScore({ name: username, score: finalScore, date: new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-GB") });
+      await db.addScore({ name: username, score: finalScore, date: new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-GB"), rounds: gameRounds });
       setScreen("gameover");
     } else {
       const next = roundIdx + 1;
@@ -1343,7 +1343,10 @@ export default function GeoWatch() {
           <div key={i} style={S.lbRow(i)}>
             <div style={{ fontSize:14, fontWeight:900, color:i===0?"#ffcc00":i===1?"#aaaacc":i===2?"#cc8866":"#445566", minWidth:24, fontFamily:"'Courier New',Courier,monospace" }}>{i===0?"◈":i===1?"◇":i===2?"◆":`${i+1}.`}</div>
             <div style={{ flex:1, fontSize:15 }}>{e.name}</div>
-            <div style={{ fontSize:13, color:"#6677aa" }}>{e.date}</div>
+            <div style={{ fontSize:13, color:"#6677aa", display:"flex", alignItems:"center", gap:6 }}>
+              {e.date}
+              {e.rounds && <span style={{ fontSize:11, color:"#445566", fontFamily:"'Courier New',Courier,monospace" }}>{e.rounds}R</span>}
+            </div>
             <div style={{ fontWeight:900, color:"#00ffb3", minWidth:60, textAlign:"right", fontFamily:"'Courier New',Courier,monospace" }}>{e.score}</div>
           </div>
         ))}
