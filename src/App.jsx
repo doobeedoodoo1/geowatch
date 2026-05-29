@@ -393,8 +393,8 @@ const db = {
   async loadLB() {
     if (!supabase) return { five: [], ten: [] };
     const [r5, r10] = await Promise.all([
-      supabase.from("leaderboard").select("name,score,date,badges").eq("rounds", 5).order("score", { ascending: false }).limit(10),
-      supabase.from("leaderboard").select("name,score,date,badges").eq("rounds", 10).order("score", { ascending: false }).limit(10),
+      supabase.from("leaderboard").select("name,score,date,badges").eq("rounds", 5).order("score", { ascending: false }).limit(20),
+      supabase.from("leaderboard").select("name,score,date,badges").eq("rounds", 10).order("score", { ascending: false }).limit(20),
     ]);
     return { five: r5.data || [], ten: r10.data || [] };
   },
