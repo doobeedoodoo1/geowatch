@@ -110,6 +110,14 @@ const T = {
     funFactPrompt:         (city, country) => `Respond in English. Give me a short, interesting fun fact (2-3 sentences) about the city ${city} in ${country}, or if you don't have reliable information about this city, about ${country} in general. Respond ONLY with a JSON object without markdown: {"fact": "text", "source": "source name", "url": "https://..."}`,
     usernameRequired:      "Please enter a username",
     backToMenu:            "← BACK TO MENU",
+    dailyChallenge:        "DAILY CHALLENGE",
+    dailySubtitle:         (n) => `${n} players today`,
+    alreadyPlayed:         "Already played today",
+    startDailyBtn:         "▶ START DAILY CHALLENGE",
+    dailyComplete:         "DAILY CHALLENGE COMPLETE",
+    dailyRank:             (rank, total) => `Rank ${rank} of ${total} players today`,
+    nextChallenge:         (cd) => `Next challenge in ${cd}`,
+    todayTop:              "TODAY'S TOP 10",
     shareResult:           "📤 SHARE RESULT",
     stats:                 "STATS",
     statsTitle:            "STATISTICS",
@@ -221,6 +229,14 @@ const T = {
     funFactPrompt:         (city, country) => `Antworte auf Deutsch. Gib mir einen kurzen, interessanten Fun Fact (2-3 Sätze) über die Stadt ${city} in ${country}, oder falls du keine gesicherten Infos zu dieser Stadt hast, über ${country} allgemein. Antworte NUR mit einem JSON-Objekt ohne Markdown: {"fact": "text", "source": "Quellenname", "url": "https://..."}`,
     usernameRequired:      "Bitte einen Benutzernamen eingeben",
     backToMenu:            "← ZUM MENÜ",
+    dailyChallenge:        "TÄGLICHE CHALLENGE",
+    dailySubtitle:         (n) => `${n} Spieler heute`,
+    alreadyPlayed:         "Heute bereits gespielt",
+    startDailyBtn:         "▶ CHALLENGE STARTEN",
+    dailyComplete:         "TÄGLICHE CHALLENGE ABGESCHLOSSEN",
+    dailyRank:             (rank, total) => `Platz ${rank} von ${total} Spielern heute`,
+    nextChallenge:         (cd) => `Nächste Challenge in ${cd}`,
+    todayTop:              "HEUTIGE TOP 10",
     shareResult:           "📤 ERGEBNIS TEILEN",
     stats:                 "STATISTIKEN",
     statsTitle:            "STATISTIKEN",
@@ -241,11 +257,12 @@ const T = {
 const FAQ_DATA = {
   en: [
     { q: "How does GeoWatch work?",          a: "GeoWatch shows you real webcam snapshots from around the world. Choose the correct city from 3 options. The faster you answer, the more points you earn. Each correct answer gives you 500 base points plus up to 500 speed bonus points." },
+    { q: "What is the Daily Challenge?",      a: "Every day at midnight (UTC), a new set of 5 cameras is generated — the same for all players worldwide. You can only play the Daily Challenge once per day. Your score is saved on the Daily Leaderboard where you can see your rank among all players who played that day. Come back tomorrow for a new challenge!" },
+    { q: "Can I play the Daily Challenge more than once?", a: "No — the Daily Challenge can only be played once per day per device. After completing it, you can see your score, your rank, and the top 10 players of the day. A countdown shows you how long until the next challenge begins." },
     { q: "What is the Streak Bonus?",         a: "Answer multiple questions correctly in a row to earn a streak bonus: 2× streak = +50 pts, 3× = +100 pts, 4× = +150 pts, 5× or more = +200 pts per round." },
     { q: "What is Zoom Mode?",                a: "Activate Zoom Mode on the home screen to make the game harder. The image starts zoomed in and gradually zooms out. Answer early for maximum points!" },
     { q: "How do hints work?",                a: "You can buy two hints per round: Continent hint (−150 pts) reveals which continent the camera is in. Climate hint (−200 pts) describes the typical climate of the location without revealing the name." },
     { q: "What are the badges?",              a: "Earn a badge for every perfect round (all answers correct). 🏅 1–9 perfect rounds · ⭐ 10–19 · 💎 20–49 · 👑 50+ perfect rounds. Badges appear next to your name on the leaderboard." },
-    { q: "What is the Daily Challenge?",      a: "Coming soon! All players worldwide will get the same 5 cameras each day with a global daily ranking." },
     { q: "How do Duels work?",                a: "Create a duel on the home screen to get a 6-digit code. Share the code with a friend. They enter it under \"Join Duel\" and play the exact same camera sequence. The higher score wins!" },
     { q: "What does the Region filter do?",   a: "Choose a region (Europe, Americas, Asia, Africa, Oceania, Middle East) to only see cameras from that part of the world." },
     { q: "How is the Leaderboard calculated?",a: "The leaderboard shows all-time high scores from all players worldwide. Only your best game per session is saved. Badges are shown next to names." },
@@ -253,6 +270,8 @@ const FAQ_DATA = {
   ],
   de: [
     { q: "Wie funktioniert GeoWatch?",        a: "GeoWatch zeigt dir echte Webcam-Aufnahmen aus aller Welt. Wähle die richtige Stadt aus 3 Optionen. Je schneller du antwortest, desto mehr Punkte bekommst du. Jede richtige Antwort gibt 500 Basispunkte plus bis zu 500 Schnelligkeitsbonus." },
+    { q: "Was ist die Tägliche Challenge?",    a: "Jeden Tag um Mitternacht (UTC) werden 5 neue Kameras generiert — dieselben für alle Spieler weltweit. Die Tägliche Challenge kann nur einmal pro Tag gespielt werden. Dein Ergebnis wird in der Tages-Rangliste gespeichert, wo du deinen Platz unter allen heutigen Spielern siehst. Morgen gibt es eine neue Challenge!" },
+    { q: "Kann ich die Tägliche Challenge mehrmals spielen?", a: "Nein — die Tägliche Challenge kann pro Tag und Gerät nur einmal gespielt werden. Nach dem Spielen siehst du deinen Score, deinen Platz und die Top 10 des Tages. Ein Countdown zeigt dir wie lange es bis zur nächsten Challenge dauert." },
     { q: "Was ist der Serien-Bonus?",          a: "Beantworte mehrere Fragen hintereinander richtig für einen Serienbonus: 2× Serie = +50 Pkt, 3× = +100 Pkt, 4× = +150 Pkt, 5× oder mehr = +200 Pkt pro Runde." },
     { q: "Was ist der Zoom-Modus?",            a: "Aktiviere den Zoom-Modus auf der Startseite für mehr Schwierigkeit. Das Bild startet stark gezoomt und zoomt langsam heraus. Früh antworten = mehr Punkte!" },
     { q: "Wie funktionieren Tipps?",           a: "Du kannst zwei Tipps pro Runde kaufen: Kontinent-Tipp (−150 Pkt) verrät den Kontinent der Kamera. Klima-Tipp (−200 Pkt) beschreibt das typische Klima ohne den Ortsnamen zu nennen." },
@@ -320,6 +339,23 @@ const getOptions = (correct, pool) => {
 const buildSeq = (pool, rounds) =>
   shuffle([...Array(pool.length).keys()]).slice(0, Math.min(rounds, pool.length));
 
+const seededRandom = (seed) => {
+  let s = seed;
+  return () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
+};
+
+const getDailySequence = (pool) => {
+  const today = new Date().toISOString().slice(0, 10);
+  const seed  = today.split("-").reduce((a, b) => a * 31 + parseInt(b), 0);
+  const rng   = seededRandom(seed);
+  const idx   = [...Array(pool.length).keys()];
+  for (let i = idx.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [idx[i], idx[j]] = [idx[j], idx[i]];
+  }
+  return idx.slice(0, 5);
+};
+
 // ── LOCAL STORAGE ─────────────────────────────────────────────────────────────
 const ls = {
   get: (k)    => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
@@ -336,6 +372,15 @@ const db = {
   async addScore({ name, score, date, rounds = 5 }) {
     if (!supabase || !name?.trim()) return;
     await supabase.from("leaderboard").insert([{ name: name.trim(), score, date, rounds }]);
+  },
+  async loadDailyLB(date) {
+    if (!supabase) return [];
+    const { data } = await supabase.from("daily_leaderboard").select("name,score,date").eq("date", date).order("score", { ascending: false }).limit(20);
+    return data || [];
+  },
+  async addDailyScore({ name, score, date }) {
+    if (!supabase || !name?.trim()) return;
+    await supabase.from("daily_leaderboard").insert([{ name: name.trim(), score, date }]);
   },
   async loadDuel(code)        { if (!supabase) return null; const { data } = await supabase.from("duels").select("*").eq("code", code).maybeSingle(); return data; },
   async saveDuel(code, payload) { if (supabase) await supabase.from("duels").upsert([{ code, ...payload }]); },
@@ -590,6 +635,11 @@ export default function GeoWatch() {
   const [usernameError, setUsernameError] = useState(false);
   const [showApiBtn,    setShowApiBtn]   = useState(false);
   const [faqOpen,       setFaqOpen]      = useState(new Set());
+  const [isDailyChallenge, setIsDailyChallenge] = useState(false);
+  const [dailyResult,   setDailyResult]  = useState(null);
+  const [dailyLB,       setDailyLB]      = useState([]);
+  const [dailyCount,    setDailyCount]   = useState(0);
+  const [countdown,     setCountdown]    = useState("");
   // ── Feature 1: region filter
   const [region,        setRegion]       = useState("all");
   const [regionWarning, setRegionWarning] = useState("");
@@ -666,6 +716,28 @@ export default function GeoWatch() {
     const id = setTimeout(() => nextRound(), 2000);
     return () => clearTimeout(id);
   }, [imgUnusable]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── COUNTDOWN bis Mitternacht UTC ────────────────────────────────────────
+  useEffect(() => {
+    const calc = () => {
+      const now = new Date();
+      const midnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+      const diff = midnight - now;
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      setCountdown(`${h}h ${m}m`);
+    };
+    calc();
+    const id = setInterval(calc, 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  // ── DAILY PLAYER COUNT ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (screen !== "home") return;
+    const today = new Date().toISOString().slice(0, 10);
+    db.loadDailyLB(today).then(lb => setDailyCount(lb.length));
+  }, [screen]);
 
   // ── CAM-BILD laden/refreshen ─────────────────────────────────────────────
   useEffect(() => {
@@ -807,9 +879,23 @@ export default function GeoWatch() {
     setOptions(getOptions(ap[s[0]], ap));
     setTimeLeft(ROUND_TIME); setSelected(null);
     setIsDuel(!!meta); setDuelMeta(meta);
+    setIsDailyChallenge(false);
     setStreak(0); setMaxStreak(0); setNewRecord(false);
     setScreen("game");
   }, [pool, rounds, region, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const startDailyChallenge = useCallback(() => {
+    if (!pool.length) return;
+    const seq = getDailySequence(pool);
+    setIsDailyChallenge(true);
+    setGameRounds(5);
+    setSequence(seq); setRoundIdx(0); setRoundScores([]);
+    setOptions(getOptions(pool[seq[0]], pool));
+    setTimeLeft(ROUND_TIME); setSelected(null);
+    setIsDuel(false); setDuelMeta(null);
+    setStreak(0); setMaxStreak(0); setNewRecord(false);
+    setScreen("game");
+  }, [pool]);
 
   // ── ANSWER ───────────────────────────────────────────────────────────────
   const handleAnswer = useCallback((city) => {
@@ -834,6 +920,19 @@ export default function GeoWatch() {
     const isLast     = roundIdx + 1 >= roundCount;
     const finalScore = roundScores.reduce((a, b) => a + b, 0);
     if (isLast) {
+      if (isDailyChallenge) {
+        const today = new Date().toISOString().slice(0, 10);
+        saveStats(roundScores, sequence, pool, maxStreak);
+        await db.addDailyScore({ name: username, score: finalScore, date: today });
+        ls.set("geowatch:daily:" + today, { played: true, score: finalScore });
+        const lb = await db.loadDailyLB(today);
+        setDailyLB(lb);
+        const myIdx = lb.findIndex(e => e.name === username.trim() && e.score === finalScore);
+        setDailyResult({ score: finalScore, rank: myIdx >= 0 ? myIdx + 1 : lb.length, total: lb.length });
+        setIsDailyChallenge(false);
+        setScreen("daily-result");
+        return;
+      }
       if (isDuel && duelMeta) {
         if (!duelMeta.challenger_done) {
           await db.saveDuel(duelCode, { ...duelMeta, challenger_score: finalScore, challenger_name: username, challenger_done: true, status: "waiting" });
@@ -853,7 +952,7 @@ export default function GeoWatch() {
       setOptions(getOptions(pool[sequence[next]], pool));
       setTimeLeft(ROUND_TIME); setSelected(null);
     }
-  }, [roundIdx, roundCount, roundScores, isDuel, duelMeta, username, duelCode, sequence, pool, lang, maxStreak]);
+  }, [roundIdx, roundCount, roundScores, isDailyChallenge, isDuel, duelMeta, username, duelCode, sequence, pool, lang, maxStreak]);
 
   // ── DUEL ─────────────────────────────────────────────────────────────────
   const createDuel = useCallback(async () => {
@@ -1092,6 +1191,29 @@ export default function GeoWatch() {
         </div>
 
         <div style={S.div} />
+        {/* ── DAILY CHALLENGE ── */}
+        {(() => {
+          const today = new Date().toISOString().slice(0, 10);
+          const played = ls.get("geowatch:daily:" + today);
+          const dateLabel = new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { day:"numeric", month:"long", year:"numeric" });
+          return (
+            <div style={{ border:"1px solid rgba(255,204,0,0.35)", borderRadius:6, padding:"14px 16px", background:"rgba(255,204,0,0.04)" }}>
+              <div style={{ fontSize:11, color:"#ffcc00", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace", marginBottom:4 }}>🌍 {t.dailyChallenge}</div>
+              <div style={{ fontSize:12, color:"#6677aa", marginBottom:10 }}>{dateLabel} · {t.dailySubtitle(dailyCount)}</div>
+              {played ? (
+                <div style={{ fontSize:13, color:"#ffcc00" }}>✓ {t.alreadyPlayed} · {t.yourScore}: {played.score.toLocaleString()}</div>
+              ) : (
+                <button
+                  style={{ ...S.btn("p"), width:"100%", background:"linear-gradient(135deg,#ffcc00,#ff9900)", color:"#07080d", opacity:camLoading?0.4:1 }}
+                  disabled={camLoading}
+                  onClick={() => { if (!username.trim()) { setUsernameError(true); } else { startDailyChallenge(); } }}>
+                  {t.startDailyBtn}
+                </button>
+              )}
+            </div>
+          );
+        })()}
+        <div style={S.div} />
         <div style={S.stitle}>{t.operativeId}</div>
         <input style={S.inp} placeholder={t.usernamePlaceholder}
           value={username}
@@ -1290,6 +1412,49 @@ export default function GeoWatch() {
               <button style={S.btn("p")} onClick={nextRound}>{roundIdx+1<roundCount ? t.nextRound : t.results}</button>
             </div>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === "daily-result" && dailyResult) {
+    const shareText = lang === "de"
+      ? `Ich habe ${dailyResult.score} Punkte in der GeoWatch Daily Challenge erreicht! 🌍 Platz ${dailyResult.rank} von ${dailyResult.total} Spielern. geowatchgame.vercel.app`
+      : `I scored ${dailyResult.score} points in the GeoWatch Daily Challenge! 🌍 Rank ${dailyResult.rank} of ${dailyResult.total} players. geowatchgame.vercel.app`;
+    return (
+      <div style={S.app}>
+        <div style={S.scan} />
+        <div style={S.hdr}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
+            <LangSwitch />
+          </div>
+        </div>
+        <div style={S.card}>
+          <div style={{ textAlign:"center", padding:"12px 0" }}>
+            <div style={{ fontSize:11, color:"#ffcc00", letterSpacing:"0.2em", marginBottom:8, fontFamily:"'Courier New',Courier,monospace" }}>🌍 {t.dailyChallenge}</div>
+            <div style={{ fontSize:11, color:"#445566", letterSpacing:"0.2em", marginBottom:10, fontFamily:"'Courier New',Courier,monospace" }}>{t.dailyComplete}</div>
+            <div style={S.score}>{dailyResult.score.toLocaleString()}</div>
+            <div style={{ fontSize:15, color:"#ffcc00", marginTop:8, fontWeight:700 }}>{t.dailyRank(dailyResult.rank, dailyResult.total)}</div>
+            <div style={{ fontSize:12, color:"#445566", marginTop:6, fontFamily:"'Courier New',Courier,monospace" }}>⏱ {t.nextChallenge(countdown)}</div>
+          </div>
+          <div style={S.div} />
+          <div style={S.stitle}>{t.todayTop}</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+            {dailyLB.map((e, i) => (
+              <div key={i} style={{ ...S.lbRow(i), border: e.name === username.trim() ? "1px solid rgba(255,204,0,0.5)" : undefined }}>
+                <div style={{ fontSize:14, fontWeight:900, color:i===0?"#ffcc00":i===1?"#aaaacc":i===2?"#cc8866":"#445566", minWidth:24, fontFamily:"'Courier New',Courier,monospace" }}>{i===0?"◈":i===1?"◇":i===2?"◆":`${i+1}.`}</div>
+                <div style={{ flex:1, fontSize:15, color: e.name === username.trim() ? "#ffcc00" : undefined }}>{e.name}</div>
+                <div style={{ fontWeight:900, color:"#00ffb3", minWidth:60, textAlign:"right", fontFamily:"'Courier New',Courier,monospace" }}>{e.score.toLocaleString()}</div>
+              </div>
+            ))}
+          </div>
+          <div style={S.div} />
+          <button style={{ ...S.btn("g"), borderColor:"rgba(0,200,255,0.5)", color:"#00c8ff" }} onClick={() => {
+            if (navigator.share) { navigator.share({ title:"GeoWatch Daily", text: shareText }).catch(() => {}); }
+            else { const a = document.createElement("a"); a.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`; a.target = "_blank"; a.click(); }
+          }}>📤 {t.shareResult}</button>
+          <button style={S.btn("g")} onClick={() => setScreen("home")}>{t.mainMenu}</button>
         </div>
       </div>
     );
