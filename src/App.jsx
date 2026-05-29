@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase     = SUPABASE_URL && SUPABASE_KEY ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const GEMINI_KEY   = import.meta.env.VITE_GEMINI_API_KEY;
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const ROUND_TIME = 30;
@@ -126,7 +127,6 @@ const T = {
     tooFewCameras:         "Too few active cameras. Please wait 1–2 min and try again (new API keys need some time to activate).",
     unknownError:          "Unknown error",
     emptyResponse:         "Empty response from API",
-    funFactPrompt:         (city, country) => `Respond in English. Give me a short, interesting fun fact (2-3 sentences) about the city ${city} in ${country}, or if you don't have reliable information about this city, about ${country} in general. Respond ONLY with a JSON object without markdown: {"fact": "text", "source": "source name", "url": "https://..."}`,
     usernameRequired:      "Please enter a username",
     backToMenu:            "← BACK TO MENU",
     dailyChallenge:        "DAILY CHALLENGE",
@@ -245,7 +245,6 @@ const T = {
     tooFewCameras:         "Zu wenige aktive Kameras. Bitte 1–2 Min. warten und nochmal versuchen (neue API-Keys brauchen etwas Zeit).",
     unknownError:          "Unbekannter Fehler",
     emptyResponse:         "Leere Antwort von API",
-    funFactPrompt:         (city, country) => `Antworte auf Deutsch. Gib mir einen kurzen, interessanten Fun Fact (2-3 Sätze) über die Stadt ${city} in ${country}, oder falls du keine gesicherten Infos zu dieser Stadt hast, über ${country} allgemein. Antworte NUR mit einem JSON-Objekt ohne Markdown: {"fact": "text", "source": "Quellenname", "url": "https://..."}`,
     usernameRequired:      "Bitte einen Benutzernamen eingeben",
     backToMenu:            "← ZUM MENÜ",
     dailyChallenge:        "TÄGLICHE CHALLENGE",
@@ -404,6 +403,15 @@ const db = {
     if (!supabase || !name?.trim()) return;
     await supabase.from("leaderboard").insert([{ name: name.trim(), score, date, rounds }]);
   },
+  async getFunFact(city) {
+    if (!supabase) return null;
+    const { data } = await supabase.from("funfacts").select("fact,source,url").eq("city", city).maybeSingle();
+    return data || null;
+  },
+  async saveFunFact(city, fact, source, url) {
+    if (!supabase) return;
+    await supabase.from("funfacts").upsert([{ city, fact, source, url }]);
+  },
   async loadDailyLB(date) {
     if (!supabase) return [];
     const { data } = await supabase.from("daily_leaderboard").select("name,score,date").eq("date", date).order("score", { ascending: false }).limit(20);
@@ -444,6 +452,27 @@ const saveStats = (roundScores, sequence, pool, maxStreak) => {
     continentStats,
     recentGames: [{ score:finalScore, date:new Date().toLocaleDateString(), rounds:roundScores.length, correct }, ...prev.recentGames].slice(0, 10),
   });
+};
+
+// ── FUN FACT (Gemini + Supabase cache) ───────────────────────────────────────
+const fetchFunFact = async (city, country, lang = "en") => {
+  const cached = await db.getFunFact(city);
+  if (cached) return cached;
+  if (!GEMINI_KEY) return null;
+  const prompt = lang === "de"
+    ? `Antworte auf Deutsch. Gib mir einen kurzen, interessanten Fun Fact (2-3 Sätze) über die Stadt ${city} in ${country}, oder falls du keine gesicherten Infos hast, über ${country} allgemein. Antworte NUR mit einem JSON-Objekt ohne Markdown: {"fact":"text","source":"Quellenname","url":"https://..."}`
+    : `Respond in English. Give me a short, interesting fun fact (2-3 sentences) about the city ${city} in ${country}, or if you have no verified info, about ${country} in general. Reply ONLY with a JSON object, no markdown: {"fact":"text","source":"source name","url":"https://..."}`;
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+      { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }], generationConfig:{ maxOutputTokens:200, temperature:0.7 } }) }
+    );
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
+    await db.saveFunFact(city, parsed.fact, parsed.source, parsed.url);
+    return parsed;
+  } catch { return null; }
 };
 
 // ── SHARE CARD ────────────────────────────────────────────────────────────────
@@ -807,28 +836,6 @@ export default function GeoWatch() {
     return () => clearInterval(id);
   }, [screen, currentCam?.id]);
 
-  const fetchFunFact = useCallback(async (city, country) => {
-    const key = import.meta.env.VITE_ANTHROPIC_API_KEY;
-    if (!key) return;
-    setFunFactLoad(true);
-    try {
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 300, messages: [{ role: "user", content: t.funFactPrompt(city, country) }] }),
-      });
-      const data = await resp.json();
-      if (!resp.ok || data?.error) { setFunFactError(`HTTP ${resp.status}: ${data?.error?.message || data?.error || resp.statusText}`); return; }
-      const text = data?.content?.[0]?.text || "";
-      try {
-        const clean  = text.replace(/```json|```/g, "").trim();
-        const match  = clean.match(/\{[\s\S]*\}/);
-        setFunFact(JSON.parse(match?.[0] ?? clean));
-      } catch { if (text) setFunFact({ fact: text }); else setFunFactError(t.emptyResponse); }
-    } catch (err) { setFunFactError(err.message); }
-    setFunFactLoad(false);
-  }, [lang]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // ── Feature 4: climate hint via Claude ───────────────────────────────────
   const fetchClimateHint = useCallback(async () => {
     if (!currentCam || hintClimText) return;
@@ -943,8 +950,13 @@ export default function GeoWatch() {
       setMaxStreak(newStreak);
       setNewRecord(true);
     }
-    if (isCorrect) fetchFunFact(currentCam.city, currentCam.country);
-  }, [currentCam, timeLeft, stopTimer, fetchFunFact, streak, maxStreak, hintPenalty]);
+    if (isCorrect) {
+      setFunFactLoad(true);
+      fetchFunFact(currentCam.city, currentCam.country, lang)
+        .then(fact => { if (fact) setFunFact(fact); setFunFactLoad(false); })
+        .catch(() => setFunFactLoad(false));
+    }
+  }, [currentCam, timeLeft, stopTimer, streak, maxStreak, hintPenalty, lang]);
 
   // ── NEXT ROUND ───────────────────────────────────────────────────────────
   const nextRound = useCallback(async () => {
