@@ -5,7 +5,6 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase     = SUPABASE_URL && SUPABASE_KEY ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
-const GEMINI_KEY   = import.meta.env.VITE_GEMINI_API_KEY;
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const ROUND_TIME = 30;
@@ -458,21 +457,35 @@ const saveStats = (roundScores, sequence, pool, maxStreak) => {
 const fetchFunFact = async (city, country, lang = "en") => {
   const cached = await db.getFunFact(city);
   if (cached) return cached;
-  if (!GEMINI_KEY) return null;
+  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
   const prompt = lang === "de"
-    ? `Antworte auf Deutsch. Gib mir einen kurzen, interessanten Fun Fact (2-3 Sätze) über die Stadt ${city} in ${country}, oder falls du keine gesicherten Infos hast, über ${country} allgemein. Antworte NUR mit einem JSON-Objekt ohne Markdown: {"fact":"text","source":"Quellenname","url":"https://..."}`
-    : `Respond in English. Give me a short, interesting fun fact (2-3 sentences) about the city ${city} in ${country}, or if you have no verified info, about ${country} in general. Reply ONLY with a JSON object, no markdown: {"fact":"text","source":"source name","url":"https://..."}`;
+    ? `Antworte auf Deutsch. Gib mir einen kurzen, interessanten Fun Fact (2-3 Sätze) über die Stadt ${city} in ${country}, oder falls du keine gesicherten Infos hast, über ${country} allgemein. Antworte NUR mit einem JSON-Objekt ohne Markdown-Backticks: {"fact":"text","source":"Quellenname","url":"https://..."}`
+    : `Respond in English. Give me a short, interesting fun fact (2-3 sentences) about the city ${city} in ${country}, or if you have no verified info, about ${country} in general. Reply ONLY with a JSON object, no markdown backticks: {"fact":"text","source":"source name","url":"https://..."}`;
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
-      { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }], generationConfig:{ maxOutputTokens:200, temperature:0.7 } }) }
-    );
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 300,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
     const data = await res.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const text = data.content?.[0]?.text || "";
     const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
-    await db.saveFunFact(city, parsed.fact, parsed.source, parsed.url);
+    db.saveFunFact(city, parsed.fact, parsed.source, parsed.url);
     return parsed;
-  } catch { return null; }
+  } catch (err) {
+    console.error("Fun Fact Fehler:", err);
+    return null;
+  }
 };
 
 // ── SHARE CARD ────────────────────────────────────────────────────────────────
@@ -1351,7 +1364,9 @@ export default function GeoWatch() {
 
           {/* ── SNAPSHOT VIEWER ── */}
           <div style={{ position:"relative", width:"100%", aspectRatio:"16/9", background:"#0a0c12", borderRadius:6, overflow:"hidden", border:"1px solid rgba(0,255,179,0.2)" }}>
-            <div style={{ position:"absolute", bottom:0, left:0, right:0, height:"25%", background:"#07080d", zIndex:10, pointerEvents:"none" }} />
+            <div style={{ position:"absolute", top:0, left:0, right:0, height:60, background:"linear-gradient(to bottom, #07080d 0%, transparent 100%)", zIndex:15, pointerEvents:"none" }} />
+            <div style={{ position:"absolute", top:0, right:0, width:"55%", height:36, background:"#07080d", zIndex:15, pointerEvents:"none" }} />
+            <div style={{ position:"absolute", bottom:0, left:0, right:0, height:50, background:"linear-gradient(to top, #07080d 0%, transparent 100%)", zIndex:15, pointerEvents:"none" }} />
             <div style={{ position:"absolute", top:10, left:12, fontSize:10, letterSpacing:"0.18em", color:"#00ffb3", zIndex:20, background:"rgba(7,8,13,0.8)", padding:"2px 8px", borderRadius:3, fontFamily:"'Courier New',Courier,monospace" }}>
               ● CAM | ID {currentCam.id.slice(-5)}
             </div>
