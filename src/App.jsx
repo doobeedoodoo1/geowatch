@@ -11,6 +11,25 @@ const ROUND_TIME = 30;
 const MAX_SCORE  = 1000;
 const CACHE_TTL  = 2 * 60 * 60 * 1000;
 
+// ── CONTINENT MAP ─────────────────────────────────────────────────────────────
+const CONTINENT_MAP = {
+  DE:"EU",AT:"EU",CH:"EU",FR:"EU",GB:"EU",IT:"EU",ES:"EU",PT:"EU",NL:"EU",BE:"EU",
+  SE:"EU",NO:"EU",DK:"EU",FI:"EU",PL:"EU",CZ:"EU",SK:"EU",HU:"EU",RO:"EU",BG:"EU",
+  HR:"EU",RS:"EU",SI:"EU",BA:"EU",ME:"EU",MK:"EU",AL:"EU",GR:"EU",TR:"EU",UA:"EU",
+  BY:"EU",LT:"EU",LV:"EU",EE:"EU",MD:"EU",RU:"EU",IS:"EU",IE:"EU",LU:"EU",MT:"EU",CY:"EU",
+  US:"NA",CA:"NA",MX:"NA",GT:"NA",BZ:"NA",HN:"NA",SV:"NA",NI:"NA",CR:"NA",PA:"NA",
+  CU:"NA",JM:"NA",HT:"NA",DO:"NA",PR:"NA",TT:"NA",BB:"NA",LC:"NA",VC:"NA",GD:"NA",
+  BR:"SA",AR:"SA",CL:"SA",CO:"SA",PE:"SA",VE:"SA",EC:"SA",BO:"SA",PY:"SA",UY:"SA",GY:"SA",SR:"SA",
+  CN:"AS",JP:"AS",KR:"AS",IN:"AS",ID:"AS",TH:"AS",VN:"AS",PH:"AS",MY:"AS",SG:"AS",
+  TW:"AS",HK:"AS",BD:"AS",PK:"AS",LK:"AS",NP:"AS",MM:"AS",KH:"AS",LA:"AS",MN:"AS",
+  KZ:"AS",UZ:"AS",KG:"AS",TJ:"AS",TM:"AS",AF:"AS",IR:"AS",IQ:"AS",SY:"AS",LB:"AS",
+  JO:"AS",SA:"AS",AE:"AS",QA:"AS",KW:"AS",BH:"AS",OM:"AS",YE:"AS",IL:"AS",
+  ZA:"AF",NG:"AF",KE:"AF",ET:"AF",GH:"AF",TZ:"AF",UG:"AF",MA:"AF",DZ:"AF",TN:"AF",
+  EG:"AF",LY:"AF",SD:"AF",CM:"AF",CI:"AF",SN:"AF",MZ:"AF",ZM:"AF",ZW:"AF",AO:"AF",MG:"AF",RW:"AF",MU:"AF",
+  AU:"OC",NZ:"OC",FJ:"OC",PG:"OC",
+};
+const getContinent = (cc) => CONTINENT_MAP[cc?.toUpperCase()] || "EU";
+
 // ── TRANSLATIONS ──────────────────────────────────────────────────────────────
 const T = {
   en: {
@@ -309,35 +328,44 @@ const matchRegion = (continent = "", region) => {
 };
 
 const getOptions = (correct, pool) => {
-  const shuffled = pool.filter(c => c.country !== correct.country).sort(() => Math.random() - 0.5);
-  const usedCountries = new Set([correct.country]);
-  const wrongOptions = [];
-
-  for (const cam of shuffled) {
-    if (!usedCountries.has(cam.country)) {
-      usedCountries.add(cam.country);
-      wrongOptions.push(cam);
-      if (wrongOptions.length === 2) break;
+  const correctContinent = getContinent(correct.countryCode);
+  const others = pool.filter(c => c.city !== correct.city);
+  const same = shuffle(others.filter(c => getContinent(c.countryCode) === correctContinent));
+  const diff = shuffle(others.filter(c => getContinent(c.countryCode) !== correctContinent));
+  const distractors = [...same.slice(0, 1), ...diff.slice(0, 1)];
+  if (distractors.length < 2) {
+    const used = new Set(distractors.map(c => c.city));
+    for (const cam of shuffle(others)) {
+      if (!used.has(cam.city)) { distractors.push(cam); used.add(cam.city); }
+      if (distractors.length === 2) break;
     }
   }
-
-  // Fallback: relax country uniqueness if pool doesn't have enough distinct countries
-  if (wrongOptions.length < 2) {
-    const used = new Set(wrongOptions.map(camLabel));
-    for (const cam of shuffled) {
-      if (!used.has(camLabel(cam))) {
-        wrongOptions.push(cam);
-        used.add(camLabel(cam));
-        if (wrongOptions.length === 2) break;
-      }
-    }
-  }
-
-  return shuffle([camLabel(correct), ...wrongOptions.map(camLabel)]);
+  return shuffle([camLabel(correct), ...distractors.slice(0, 2).map(camLabel)]);
 };
 
-const buildSeq = (pool, rounds) =>
-  shuffle([...Array(pool.length).keys()]).slice(0, Math.min(rounds, pool.length));
+const buildBalancedSeq = (pool, rounds, continent = "ALL") => {
+  if (continent && continent !== "ALL") {
+    const filtered = pool.map((c, i) => ({ c, i })).filter(({ c }) => getContinent(c.countryCode) === continent);
+    return shuffle(filtered).slice(0, rounds).map(({ i }) => i);
+  }
+  const groups = {};
+  pool.forEach((cam, idx) => {
+    const cont = getContinent(cam.countryCode);
+    if (!groups[cont]) groups[cont] = [];
+    groups[cont].push(idx);
+  });
+  const conts = Object.keys(groups).filter(k => groups[k].length > 0);
+  conts.forEach(k => { groups[k] = shuffle(groups[k]); });
+  const result = [];
+  let i = 0;
+  while (result.length < rounds) {
+    const cont = conts[i % conts.length];
+    if (groups[cont].length > 0) result.push(groups[cont].shift());
+    i++;
+    if (i > rounds * conts.length) break;
+  }
+  return shuffle(result);
+};
 
 const seededRandom = (seed) => {
   let s = seed;
@@ -365,9 +393,12 @@ const ls = {
 // ── SUPABASE DB ───────────────────────────────────────────────────────────────
 const db = {
   async loadLB() {
-    if (!supabase) return [];
-    const { data } = await supabase.from("leaderboard").select("name,score,date,rounds").order("score", { ascending: false }).limit(20);
-    return data || [];
+    if (!supabase) return { five: [], ten: [] };
+    const [r5, r10] = await Promise.all([
+      supabase.from("leaderboard").select("name,score,date,badges").eq("rounds", 5).order("score", { ascending: false }).limit(10),
+      supabase.from("leaderboard").select("name,score,date,badges").eq("rounds", 10).order("score", { ascending: false }).limit(10),
+    ]);
+    return { five: r5.data || [], ten: r10.data || [] };
   },
   async addScore({ name, score, date, rounds = 5 }) {
     if (!supabase || !name?.trim()) return;
@@ -551,7 +582,7 @@ const mapCam = (w) => ({
   city:        w.location?.city,
   country:     w.location?.country || w.location?.country_code,
   countryCode: w.location?.country_code,
-  continent:   w.location?.continent || "Unknown",
+  continent:   getContinent(w.location?.country_code),
   flag:        flag(w.location?.country_code),
   lat:         w.location?.latitude  ?? null,
   lon:         w.location?.longitude ?? null,
@@ -624,7 +655,7 @@ export default function GeoWatch() {
   const [funFact,       setFunFact]      = useState(null);
   const [funFactLoad,   setFunFactLoad]  = useState(false);
   const [funFactError,  setFunFactError] = useState(null);
-  const [leaderboard,   setLeaderboard]  = useState([]);
+  const [leaderboard,   setLeaderboard]  = useState({ five: [], ten: [] });
   const [lbLoading,     setLbLoading]    = useState(false);
   const [duelCode,      setDuelCode]     = useState("");
   const [joinInput,     setJoinInput]    = useState("");
@@ -873,7 +904,7 @@ export default function GeoWatch() {
       }
     }
     const r = meta?.rounds ?? rounds;
-    const s = seq ?? buildSeq(ap, r);
+    const s = seq ?? buildBalancedSeq(ap, r, "ALL");
     setGameRounds(r);
     setSequence(s); setRoundIdx(0); setRoundScores([]);
     setOptions(getOptions(ap[s[0]], ap));
@@ -957,7 +988,7 @@ export default function GeoWatch() {
   // ── DUEL ─────────────────────────────────────────────────────────────────
   const createDuel = useCallback(async () => {
     const code = genCode();
-    const seq  = buildSeq(pool, rounds);
+    const seq  = buildBalancedSeq(pool, rounds, "ALL");
     const data = { code, sequence: seq, rounds, challenger_name: username, challenger_score: 0, challenger_done: false, status: "pending", created_at: new Date().toISOString() };
     await db.saveDuel(code, data);
     setDuelCode(code); setDuelMeta(data);
@@ -1497,50 +1528,70 @@ export default function GeoWatch() {
     </div>
   );
 
-  if (screen === "leaderboard") return (
-    <div style={S.app}>
-      <div style={S.scan} />
-      <div style={S.hdr}>
-        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
-          <LangSwitch />
-        </div>
-        <button style={S.btn("g")} onClick={() => setScreen("home")}>{t.back}</button>
-      </div>
-      <div style={S.card}>
-        <div style={{ fontSize:18, fontWeight:900, letterSpacing:"0.2em", color:"#c8d0d8", fontFamily:"'Courier New',Courier,monospace" }}>{t.leaderboardTitle}</div>
-        {lbLoading ? (
-          <div style={{ textAlign:"center", color:"#445566", padding:40 }}>{t.loading}</div>
-        ) : leaderboard.length === 0 ? (
-          <div style={{ textAlign:"center", color:"#445566", padding:40 }}>{t.noEntries}</div>
-        ) : leaderboard.map((e, i) => (
-          <div key={i} style={S.lbRow(i)}>
-            <div style={{ fontSize:14, fontWeight:900, color:i===0?"#ffcc00":i===1?"#aaaacc":i===2?"#cc8866":"#445566", minWidth:24, fontFamily:"'Courier New',Courier,monospace" }}>{i===0?"◈":i===1?"◇":i===2?"◆":`${i+1}.`}</div>
-            <div style={{ flex:1, fontSize:15 }}>{e.name}</div>
-            <div style={{ fontSize:13, color:"#6677aa", display:"flex", alignItems:"center", gap:6 }}>
-              {e.date}
-              {e.rounds && <span style={{ fontSize:11, color:"#445566", fontFamily:"'Courier New',Courier,monospace" }}>{e.rounds}R</span>}
+  if (screen === "leaderboard") {
+    const lbRankColor = (i) => i===0?"#ffcc00":i===1?"#aaaacc":i===2?"#cc8866":"#445566";
+    const lbRankLabel = (i) => i===0?"◈":i===1?"◇":i===2?"◆":`${i+1}.`;
+    const LbCol = ({ entries }) => (
+      <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+        {entries.length === 0
+          ? <div style={{ color:"#445566", fontSize:12, padding:"8px 0" }}>{t.noEntries}</div>
+          : entries.map((e, i) => (
+            <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", background:i===0?"rgba(0,255,179,0.08)":"rgba(255,255,255,0.02)", borderRadius:4, border:i===0?"1px solid rgba(0,255,179,0.3)":"1px solid rgba(255,255,255,0.05)" }}>
+              <div style={{ fontSize:12, fontWeight:900, color:lbRankColor(i), minWidth:20, fontFamily:"'Courier New',Courier,monospace" }}>{lbRankLabel(i)}</div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:13, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.name}</div>
+                <div style={{ fontSize:10, color:"#445566" }}>{e.date}</div>
+              </div>
+              <div style={{ fontWeight:900, color:"#00ffb3", fontSize:13, fontFamily:"'Courier New',Courier,monospace", flexShrink:0 }}>{e.score}</div>
             </div>
-            <div style={{ fontWeight:900, color:"#00ffb3", minWidth:60, textAlign:"right", fontFamily:"'Courier New',Courier,monospace" }}>{e.score}</div>
-          </div>
-        ))}
-        {username.trim()
-          ? <button style={{ ...S.btn("p"), marginTop:8 }} onClick={() => startGame()}>{t.play}</button>
-          : <button style={{ ...S.btn("g"), marginTop:8 }} onClick={() => setScreen("home")}>{t.backToMenu}</button>
+          ))
         }
-        <div style={S.div} />
-        <div style={S.stitle}>{t.badgeRanking}</div>
-        <div style={{ background:"rgba(0,255,179,0.04)", border:"1px solid rgba(0,255,179,0.12)", borderRadius:4, padding:"12px 16px", fontSize:12, lineHeight:2.2 }}>
-          <div style={{ display:"grid", gridTemplateColumns:"auto 1fr", gap:"0 14px" }}>
-            <span>🏅</span><span style={{ color:"#6677aa" }}>1–9 {t.perfectRounds}</span>
-            <span>⭐</span><span style={{ color:"#6677aa" }}>10–19 {t.perfectRounds}</span>
-            <span>💎</span><span style={{ color:"#6677aa" }}>20–49 {t.perfectRounds}</span>
-            <span>👑</span><span style={{ color:"#6677aa" }}>50+ {t.perfectRounds}</span>
+      </div>
+    );
+    return (
+      <div style={S.app}>
+        <div style={S.scan} />
+        <div style={S.hdr}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
+            <LangSwitch />
+          </div>
+          <button style={S.btn("g")} onClick={() => setScreen("home")}>{t.back}</button>
+        </div>
+        <div style={S.card}>
+          <div style={{ fontSize:18, fontWeight:900, letterSpacing:"0.2em", color:"#c8d0d8", fontFamily:"'Courier New',Courier,monospace" }}>{t.leaderboardTitle}</div>
+          {lbLoading ? (
+            <div style={{ textAlign:"center", color:"#445566", padding:40 }}>{t.loading}</div>
+          ) : (
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+              <div>
+                <div style={{ ...S.stitle, marginBottom:8 }}>{t.fiveRounds}</div>
+                <LbCol entries={leaderboard.five} />
+              </div>
+              <div>
+                <div style={{ ...S.stitle, marginBottom:8 }}>{t.tenRounds}</div>
+                <LbCol entries={leaderboard.ten} />
+              </div>
+            </div>
+          )}
+          {username.trim()
+            ? <button style={{ ...S.btn("p"), marginTop:8 }} onClick={() => startGame()}>{t.play}</button>
+            : <button style={{ ...S.btn("g"), marginTop:8 }} onClick={() => setScreen("home")}>{t.backToMenu}</button>
+          }
+          <div style={S.div} />
+          <div style={S.stitle}>{t.badgeRanking}</div>
+          <div style={{ background:"rgba(0,255,179,0.04)", border:"1px solid rgba(0,255,179,0.12)", borderRadius:4, padding:"12px 16px", fontSize:12, lineHeight:2.2 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"auto 1fr", gap:"0 14px" }}>
+              <span>🏅</span><span style={{ color:"#6677aa" }}>1–9 {t.perfectRounds}</span>
+              <span>⭐</span><span style={{ color:"#6677aa" }}>10–19 {t.perfectRounds}</span>
+              <span>💎</span><span style={{ color:"#6677aa" }}>20–49 {t.perfectRounds}</span>
+              <span>👑</span><span style={{ color:"#6677aa" }}>50+ {t.perfectRounds}</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   if (screen === "stats") {
     const st = ls.get(STATS_KEY) || emptyStats();

@@ -16,7 +16,8 @@
       "WebFetch(domain:japanzy.com)",
       "WebFetch(domain:sakuralivecams.com)",
       "Bash(npx supabase *)",
-      "Skill(claude-api)"
+      "Skill(claude-api)",
+      "Bash(git *)"
     ]
   }
 }
