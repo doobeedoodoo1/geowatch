@@ -418,7 +418,8 @@ const db = {
   },
   async addDailyScore({ name, score, date }) {
     if (!supabase || !name?.trim()) return;
-    await supabase.from("daily_leaderboard").insert([{ name: name.trim(), score, date }]);
+    const { error } = await supabase.from("daily_leaderboard").insert([{ name: name.trim(), score, date }]);
+    if (error) console.error("addDailyScore INSERT error:", error);
   },
   async loadDuel(code)        { if (!supabase) return null; const { data } = await supabase.from("duels").select("*").eq("code", code).maybeSingle(); return data; },
   async saveDuel(code, payload) { if (supabase) await supabase.from("duels").upsert([{ code, ...payload }]); },
@@ -978,13 +979,19 @@ export default function GeoWatch() {
     if (isLast) {
       if (isDailyChallenge) {
         const today = new Date().toISOString().slice(0, 10);
-        saveStats(roundScores, sequence, pool, maxStreak);
-        await db.addDailyScore({ name: username, score: finalScore, date: today });
-        ls.set("geowatch:daily:" + today, { played: true, score: finalScore });
-        const lb = await db.loadDailyLB(today);
-        setDailyLB(lb);
-        const myIdx = lb.findIndex(e => e.name === username.trim() && e.score === finalScore);
-        setDailyResult({ score: finalScore, rank: myIdx >= 0 ? myIdx + 1 : lb.length, total: lb.length });
+        try {
+          saveStats(roundScores, sequence, pool, maxStreak);
+          await db.addDailyScore({ name: username, score: finalScore, date: today });
+          ls.set("geowatch:daily:" + today, { played: true, score: finalScore });
+          const lb = await db.loadDailyLB(today);
+          console.log("Daily LB after save:", lb);
+          setDailyLB(lb);
+          const myIdx = lb.findIndex(e => e.name === username.trim() && e.score === finalScore);
+          setDailyResult({ score: finalScore, rank: myIdx >= 0 ? myIdx + 1 : lb.length, total: lb.length });
+        } catch (err) {
+          console.error("Daily Challenge save/load error:", err);
+          setDailyResult({ score: finalScore, rank: 1, total: 1 });
+        }
         setIsDailyChallenge(false);
         setScreen("daily-result");
         return;
