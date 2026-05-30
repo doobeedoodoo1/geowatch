@@ -1646,6 +1646,28 @@ export default function GeoWatch() {
           <button style={S.btn("g")} onClick={() => setScreen("join-duel")}>{t.joinDuelBtn}</button>
         </div>
         {showApiBtn && <button style={{ ...S.btn("g"), fontSize:11, opacity:0.5 }} onClick={() => setScreen("setup")}>{t.reloadCameras}</button>}
+
+        {/* ── BUY ME A COFFEE ── */}
+        <div style={{ display:"flex", justifyContent:"center", paddingTop:8 }}>
+          <a
+            href="https://ko-fi.com/geowatch"
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display:"inline-flex", alignItems:"center", gap:8,
+              background:"#FFDD00", color:"#000000",
+              fontFamily:"'Inter',system-ui,sans-serif",
+              fontWeight:700, fontSize:14,
+              padding:"10px 20px", borderRadius:6,
+              textDecoration:"none", transition:"opacity 0.15s",
+              boxShadow:"0 2px 12px rgba(255,221,0,0.3)",
+            }}
+            onMouseOver={e=>e.currentTarget.style.opacity='0.85'}
+            onMouseOut={e=>e.currentTarget.style.opacity='1'}
+          >
+            ☕ {lang === "de" ? "Kauf mir einen Kaffee" : "Buy me a coffee"}
+          </a>
+        </div>
       </div>
     </div>
   );
