@@ -1481,8 +1481,8 @@ export default function GeoWatch() {
         textDecoration:"none",
         boxShadow:"0 2px 12px rgba(255,94,91,0.45)",
         transition:"opacity 0.15s, transform 0.15s",
-        opacity: screen === "boot" ? 0 : 0.9,
-        pointerEvents: screen === "boot" ? "none" : "auto",
+        opacity: screen === "boot" || screen === "game" ? 0 : 0.9,
+        pointerEvents: screen === "boot" || screen === "game" ? "none" : "auto",
       }}
       onMouseOver={e => { e.currentTarget.style.opacity="1"; e.currentTarget.style.transform="translateY(-1px)"; }}
       onMouseOut={e => { e.currentTarget.style.opacity="0.9"; e.currentTarget.style.transform="translateY(0)"; }}
@@ -1801,7 +1801,16 @@ export default function GeoWatch() {
             </div>
           )}
 
-          <div style={{ fontSize:13, color:"#445566", letterSpacing:"0.1em" }}>{t.whereIsCamera}</div>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <div style={{ fontSize:13, color:"#445566", letterSpacing:"0.1em" }}>{t.whereIsCamera}</div>
+            {!selected && (
+              <a href="https://ko-fi.com/geowatch" target="_blank" rel="noreferrer"
+                style={{ display:"inline-flex", alignItems:"center", gap:5, background:"#ff5e5b", color:"#fff", fontFamily:"'Inter',system-ui,sans-serif", fontWeight:700, fontSize:12, padding:"5px 12px", borderRadius:20, textDecoration:"none", opacity:0.85, flexShrink:0 }}
+                onMouseOver={e=>e.currentTarget.style.opacity='1'}
+                onMouseOut={e=>e.currentTarget.style.opacity='0.85'}
+              >☕ Ko-fi</a>
+            )}
+          </div>
           <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
             {options.map(city => {
               const st = optSt(city);
