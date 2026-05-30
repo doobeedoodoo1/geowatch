@@ -29,6 +29,8 @@ const CONTINENT_MAP = {
   AU:"OC",NZ:"OC",FJ:"OC",PG:"OC",
 };
 const getContinent = (cc) => CONTINENT_MAP[cc?.toUpperCase()] || "EU";
+const CONTINENT_NAMES = { EU:"Europe", NA:"North America", SA:"South America", AS:"Asia", AF:"Africa", OC:"Oceania", ME:"Middle East" };
+const contName = (code) => CONTINENT_NAMES[code] || code;
 
 // ── TRANSLATIONS ──────────────────────────────────────────────────────────────
 const T = {
@@ -153,6 +155,30 @@ const T = {
     resetStats:            "↺ Reset Stats",
     noStats:               "No stats yet — play some rounds!",
     correct:               "correct",
+    // Time Attack
+    timeAttack:            "⏱ TIME ATTACK",
+    timeAttackSub:         "max. rounds in 3 min",
+    timeAttackLabel:       "TIME ATTACK",
+    roundsDone:            (n) => `${n} rounds`,
+    globalTimer:           "TIME LEFT",
+    // Photo Compare
+    photoCompare:          "🖼 PHOTO COMPARE",
+    photoCompareSub:       "which image is in …?",
+    photoCompareQ:         (cont) => `Which image is in ${cont}?`,
+    leftBtn:               "◀ LEFT",
+    rightBtn:              "RIGHT ▶",
+    // Friends
+    friendsLB:             "👥 FRIENDS",
+    friendsTitle:          "FRIENDS LEADERBOARD",
+    createGroup:           "CREATE GROUP",
+    joinGroup:             "JOIN GROUP",
+    groupCode:             "Group Code",
+    groupCreated:          (code) => `Group created! Code: ${code}`,
+    groupJoined:           (n) => `Joined! ${n} members in group.`,
+    groupNotFound:         "Group not found.",
+    members:               "Members",
+    inviteText:            (code) => `Join my GeoWatch friends group! Code: ${code} → geowatchgame.vercel.app`,
+    copyCode:              "📋 COPY INVITE",
   },
   de: {
     initializing:          "INITIALISIERUNG...",
@@ -275,6 +301,30 @@ const T = {
     resetStats:            "↺ Stats zurücksetzen",
     noStats:               "Noch keine Statistiken — spiel ein paar Runden!",
     correct:               "richtig",
+    // Time Attack
+    timeAttack:            "⏱ ZEITANGRIFF",
+    timeAttackSub:         "max. Runden in 3 Min",
+    timeAttackLabel:       "ZEITANGRIFF",
+    roundsDone:            (n) => `${n} Runden`,
+    globalTimer:           "ZEIT ÜBRIG",
+    // Photo Compare
+    photoCompare:          "🖼 BILDVERGLEICH",
+    photoCompareSub:       "welches Bild liegt in …?",
+    photoCompareQ:         (cont) => `Welches Bild liegt in ${cont}?`,
+    leftBtn:               "◀ LINKS",
+    rightBtn:              "RECHTS ▶",
+    // Friends
+    friendsLB:             "👥 FREUNDE",
+    friendsTitle:          "FREUNDE RANGLISTE",
+    createGroup:           "GRUPPE ERSTELLEN",
+    joinGroup:             "GRUPPE BEITRETEN",
+    groupCode:             "Gruppen-Code",
+    groupCreated:          (code) => `Gruppe erstellt! Code: ${code}`,
+    groupJoined:           (n) => `Beigetreten! ${n} Mitglieder in der Gruppe.`,
+    groupNotFound:         "Gruppe nicht gefunden.",
+    members:               "Mitglieder",
+    inviteText:            (code) => `Tritt meiner GeoWatch-Freundesgruppe bei! Code: ${code} → geowatchgame.vercel.app`,
+    copyCode:              "📋 CODE KOPIEREN",
   },
 };
 
@@ -441,11 +491,70 @@ const db = {
   },
   async loadDuel(code)        { if (!supabase) return null; const { data } = await supabase.from("duels").select("*").eq("code", code).maybeSingle(); return data; },
   async saveDuel(code, payload) { if (supabase) await supabase.from("duels").upsert([{ code, ...payload }]); },
+  async loadTimeAttackLB() {
+    if (!supabase) return [];
+    const { data } = await supabase.from("time_attack_lb").select("name,score,rounds_completed,date,badges").order("score", { ascending: false }).limit(20);
+    return data || [];
+  },
+  async addTimeAttackScore({ name, score, rounds_completed, date, badges = 0 }) {
+    if (!supabase || !name?.trim()) return;
+    await supabase.from("time_attack_lb").insert([{ name: name.trim(), score, rounds_completed, date, badges }]);
+  },
+  async loadFriendsLB(members) {
+    if (!supabase || !members.length) return { five:[], ten:[], fifteen:[], twenty:[], ta:[] };
+    const q = (tbl, col, eq) => supabase.from(tbl).select(col).in("name", members).order("score",{ascending:false}).limit(20);
+    const [r5,r10,r15,r20,rta] = await Promise.all([
+      supabase.from("leaderboard").select("name,score,date,badges").in("name",members).eq("rounds",5).order("score",{ascending:false}).limit(20),
+      supabase.from("leaderboard").select("name,score,date,badges").in("name",members).eq("rounds",10).order("score",{ascending:false}).limit(20),
+      supabase.from("leaderboard").select("name,score,date,badges").in("name",members).eq("rounds",15).order("score",{ascending:false}).limit(20),
+      supabase.from("leaderboard").select("name,score,date,badges").in("name",members).eq("rounds",20).order("score",{ascending:false}).limit(20),
+      supabase.from("time_attack_lb").select("name,score,rounds_completed,date,badges").in("name",members).order("score",{ascending:false}).limit(20),
+    ]);
+    return { five:r5.data||[], ten:r10.data||[], fifteen:r15.data||[], twenty:r20.data||[], ta:rta.data||[] };
+  },
+  async loadFriendGroup(code) {
+    if (!supabase) return null;
+    const { data } = await supabase.from("friend_groups").select("*").eq("code", code).maybeSingle();
+    return data;
+  },
+  async createFriendGroup(code, creatorName) {
+    if (!supabase) return;
+    await supabase.from("friend_groups").insert([{ code, members: [creatorName] }]);
+  },
+  async joinFriendGroup(code, memberName) {
+    if (!supabase) return null;
+    const group = await db.loadFriendGroup(code);
+    if (!group) return null;
+    const members = [...new Set([...group.members, memberName])];
+    await supabase.from("friend_groups").update({ members }).eq("code", code);
+    return members;
+  },
 };
 
 // ── STATS ─────────────────────────────────────────────────────────────────────
-const STATS_KEY  = "geowatch:stats";
+const STATS_KEY     = "geowatch:stats";
+const PLAYDATES_KEY = "geowatch:playdates";
 const emptyStats = () => ({ gamesPlayed:0, totalScore:0, correctAnswers:0, totalAnswers:0, bestScore:0, bestStreak:0, continentStats:{}, recentGames:[] });
+
+const recordPlayDate = () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const dates = new Set(ls.get(PLAYDATES_KEY) || []);
+  dates.add(today);
+  ls.set(PLAYDATES_KEY, [...dates]);
+};
+
+const calcDayStreak = (dates) => {
+  const set = new Set(dates);
+  let streak = 0;
+  const d = new Date();
+  while (true) {
+    const key = d.toISOString().slice(0, 10);
+    if (!set.has(key)) { d.setDate(d.getDate() - 1); if (!set.has(d.toISOString().slice(0, 10))) break; break; }
+    streak++;
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+};
 
 const saveStats = (roundScores, sequence, pool, maxStreak) => {
   const prev = ls.get(STATS_KEY) || emptyStats();
@@ -470,6 +579,7 @@ const saveStats = (roundScores, sequence, pool, maxStreak) => {
     continentStats,
     recentGames: [{ score:finalScore, date:new Date().toLocaleDateString(), rounds:roundScores.length, correct }, ...prev.recentGames].slice(0, 10),
   });
+  recordPlayDate();
 };
 
 // ── FUN FACT (Gemini + Supabase cache) ───────────────────────────────────────
@@ -749,7 +859,30 @@ export default function GeoWatch() {
   const [hintClimText,  setHintClimText] = useState("");
   const [hintClimLoad,  setHintClimLoad] = useState(false);
   const [hintPenalty,   setHintPenalty]  = useState(0);
-  const timerRef = useRef(null);
+  const timerRef   = useRef(null);
+  // ── Time Attack
+  const [isTimeAttack,  setIsTimeAttack] = useState(false);
+  const [taLeft,        setTaLeft]       = useState(180);
+  const [taRounds,      setTaRounds]     = useState(0);
+  const taTimerRef = useRef(null);
+  // ── Photo Compare
+  const [isPhotoCompare, setIsPhotoCompare] = useState(false);
+  const [compareLeft,    setCompareLeft]    = useState(null);
+  const [compareRight,   setCompareRight]   = useState(null);
+  const [compareTarget,  setCompareTarget]  = useState("");
+  const [compareCorrect, setCompareCorrect] = useState(null); // "left"|"right"
+  const [compareSelected,setCompareSelected]= useState(null);
+  const [compareScores,  setCompareScores]  = useState([]);
+  const [compareRound,   setCompareRound]   = useState(0);
+  const COMPARE_ROUNDS = 5;
+  // ── Friends Leaderboard
+  const [friendGroup,    setFriendGroup]   = useState(() => ls.get("geowatch:friendgroup") || null);
+  const [friendJoinInput,setFriendJoinInput]= useState("");
+  const [friendError,    setFriendError]   = useState("");
+  const [friendsLBData,  setFriendsLBData] = useState({ five:[], ten:[], fifteen:[], twenty:[], ta:[] });
+  const [friendsLBLoad,  setFriendsLBLoad] = useState(false);
+  // ── Time Attack Leaderboard
+  const [taLBData,       setTaLBData]      = useState([]);
 
   const t          = T[lang];
   const currentCam = sequence.length && pool.length ? pool[sequence[roundIdx]] : null;
@@ -786,6 +919,19 @@ export default function GeoWatch() {
       }
     })();
   }, []);
+
+  // ── TIME ATTACK GLOBAL TIMER ─────────────────────────────────────────────
+  useEffect(() => {
+    if (screen !== "game" || !isTimeAttack || selected !== null) return;
+    if (taLeft <= 0) return;
+    taTimerRef.current = setInterval(() => {
+      setTaLeft(v => {
+        if (v <= 1) { clearInterval(taTimerRef.current); endTimeAttack(); return 0; }
+        return v - 1;
+      });
+    }, 1000);
+    return () => clearInterval(taTimerRef.current);
+  }, [screen, isTimeAttack, roundIdx, selected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── SHIFT+ALT+A ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -915,7 +1061,11 @@ export default function GeoWatch() {
   useEffect(() => {
     if (screen !== "leaderboard") return;
     setLbLoading(true);
-    db.loadLB().then(lb => { setLeaderboard(lb); setLbLoading(false); });
+    Promise.all([db.loadLB(), db.loadTimeAttackLB()]).then(([lb, ta]) => {
+      setLeaderboard(lb);
+      setTaLBData(ta);
+      setLbLoading(false);
+    });
   }, [screen]);
 
   // ── TIMER ────────────────────────────────────────────────────────────────
@@ -928,6 +1078,82 @@ export default function GeoWatch() {
     }, 1000);
     return stopTimer;
   }, [screen, roundIdx, selected]);
+
+  // ── TIME ATTACK ──────────────────────────────────────────────────────────
+  const endTimeAttack = useCallback(async () => {
+    clearInterval(taTimerRef.current);
+    const finalScore = roundScores.reduce((a, b) => a + b, 0);
+    saveStats(roundScores, sequence, pool, maxStreak);
+    const isPerfect = roundScores.length > 0 && roundScores.every(s => s > 0);
+    await db.addTimeAttackScore({ name: username, score: finalScore, rounds_completed: roundScores.length, date: new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-GB"), badges: isPerfect ? 1 : 0 });
+    setIsTimeAttack(false);
+    setScreen("gameover");
+  }, [roundScores, sequence, pool, maxStreak, username, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const startTimeAttack = useCallback(() => {
+    if (!pool.length) return;
+    const shuffled = shuffle([...pool]);
+    setIsTimeAttack(true);
+    setTaLeft(180);
+    setTaRounds(0);
+    setGameRounds(9999);
+    setSequence(shuffled.map((_, i) => i));
+    setRoundIdx(0); setRoundScores([]);
+    setOptions(getOptions(shuffled[0], shuffled));
+    setTimeLeft(20); setSelected(null);
+    setIsDuel(false); setDuelMeta(null);
+    setIsDailyChallenge(false);
+    setStreak(0); setMaxStreak(0); setNewRecord(false);
+    setScreen("game");
+  }, [pool]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── PHOTO COMPARE ────────────────────────────────────────────────────────
+  const startPhotoCompare = useCallback(() => {
+    if (pool.length < 10) return;
+    const conts = ["EU","NA","SA","AS","AF","OC","ME"];
+    const target = conts[Math.floor(Math.random() * conts.length)];
+    const inCont    = pool.filter(c => getContinent(c.countryCode) === target && c.imageUrl);
+    const notInCont = pool.filter(c => getContinent(c.countryCode) !== target && c.imageUrl);
+    if (inCont.length < 1 || notInCont.length < 1) { startPhotoCompare(); return; }
+    const correctCam = inCont[Math.floor(Math.random() * inCont.length)];
+    const wrongCam   = notInCont[Math.floor(Math.random() * notInCont.length)];
+    const isLeft = Math.random() < 0.5;
+    setCompareLeft(isLeft ? correctCam : wrongCam);
+    setCompareRight(isLeft ? wrongCam : correctCam);
+    setCompareTarget(target);
+    setCompareCorrect(isLeft ? "left" : "right");
+    setCompareSelected(null);
+    setCompareScores([]);
+    setCompareRound(0);
+    setScreen("compare");
+  }, [pool]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const nextCompareRound = useCallback(() => {
+    const nextRoundNum = compareRound + 1;
+    if (nextRoundNum >= COMPARE_ROUNDS) { setScreen("compare-over"); return; }
+    const conts = ["EU","NA","SA","AS","AF","OC","ME"];
+    const target = conts[Math.floor(Math.random() * conts.length)];
+    const inCont    = pool.filter(c => getContinent(c.countryCode) === target && c.imageUrl);
+    const notInCont = pool.filter(c => getContinent(c.countryCode) !== target && c.imageUrl);
+    if (inCont.length < 1 || notInCont.length < 1) { nextCompareRound(); return; }
+    const correctCam = inCont[Math.floor(Math.random() * inCont.length)];
+    const wrongCam   = notInCont[Math.floor(Math.random() * notInCont.length)];
+    const isLeft = Math.random() < 0.5;
+    setCompareLeft(isLeft ? correctCam : wrongCam);
+    setCompareRight(isLeft ? wrongCam : correctCam);
+    setCompareTarget(target);
+    setCompareCorrect(isLeft ? "left" : "right");
+    setCompareSelected(null);
+    setCompareRound(nextRoundNum);
+  }, [pool, compareRound]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCompareAnswer = useCallback((side) => {
+    if (compareSelected) return;
+    setCompareSelected(side);
+    const isCorrect = side === compareCorrect;
+    const pts = isCorrect ? 500 : 0;
+    setCompareScores(prev => [...prev, pts]);
+  }, [compareSelected, compareCorrect]);
 
   // ── GAME START ───────────────────────────────────────────────────────────
   const startGame = useCallback((seq = null, meta = null, p = null) => {
@@ -1030,11 +1256,14 @@ export default function GeoWatch() {
       setScreen("gameover");
     } else {
       const next = roundIdx + 1;
+      // In time attack: cycle through shuffled pool indefinitely
+      const poolIdx = isTimeAttack ? (next % pool.length) : sequence[next];
       setRoundIdx(next);
-      setOptions(getOptions(pool[sequence[next]], pool));
-      setTimeLeft(ROUND_TIME); setSelected(null);
+      setOptions(getOptions(pool[poolIdx], pool));
+      setTimeLeft(isTimeAttack ? 20 : ROUND_TIME); setSelected(null);
+      if (isTimeAttack) setTaRounds(n => n + 1);
     }
-  }, [roundIdx, roundCount, roundScores, isDailyChallenge, isDuel, duelMeta, username, duelCode, sequence, pool, lang, maxStreak]);
+  }, [roundIdx, roundCount, roundScores, isDailyChallenge, isDuel, duelMeta, username, duelCode, sequence, pool, lang, maxStreak, isTimeAttack]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── DUEL ─────────────────────────────────────────────────────────────────
   const createDuel = useCallback(async () => {
@@ -1224,6 +1453,7 @@ export default function GeoWatch() {
         <div style={{ display:"flex", gap:8 }}>
           <button style={S.btn("g")} onClick={() => setScreen("faq")}>FAQ</button>
           <button style={S.btn("g")} onClick={() => setScreen("stats")}>{t.stats}</button>
+          <button style={S.btn("g")} onClick={() => setScreen("friends-lb")}>{t.friendsLB}</button>
           <button style={S.btn("g")} onClick={() => setScreen("leaderboard")}>{t.leaderboard}</button>
         </div>
       </div>
@@ -1307,6 +1537,19 @@ export default function GeoWatch() {
         <button style={{ ...S.btn("p"), opacity:(!camLoading)?1:0.4, padding:"14px", fontSize:15 }}
           disabled={camLoading}
           onClick={() => { if (!username.trim()) { setUsernameError(true); } else { startGame(); } }}>{t.startMission(rounds)}</button>
+        {/* ── EXTRA MODES ── */}
+        <div style={S.g2}>
+          <div style={{ border:"1px solid rgba(0,200,255,0.35)", borderRadius:6, padding:"14px 16px", background:"rgba(0,200,255,0.04)", cursor:"pointer" }}
+               onClick={() => { if (!username.trim()) { setUsernameError(true); } else { startTimeAttack(); } }}>
+            <div style={{ fontSize:11, color:"#00c8ff", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace", marginBottom:2 }}>{t.timeAttack}</div>
+            <div style={{ fontSize:11, color:"#445566" }}>{t.timeAttackSub}</div>
+          </div>
+          <div style={{ border:"1px solid rgba(180,100,255,0.35)", borderRadius:6, padding:"14px 16px", background:"rgba(180,100,255,0.04)", cursor:"pointer" }}
+               onClick={() => { if (!username.trim()) { setUsernameError(true); } else { startPhotoCompare(); } }}>
+            <div style={{ fontSize:11, color:"#b464ff", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace", marginBottom:2 }}>{t.photoCompare}</div>
+            <div style={{ fontSize:11, color:"#445566" }}>{t.photoCompareSub}</div>
+          </div>
+        </div>
         <div style={S.div} />
         <div style={S.stitle}>{t.duels}</div>
         <div style={S.g2}>
@@ -1375,6 +1618,11 @@ export default function GeoWatch() {
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
             <div>
               <div style={{ fontSize:11, color:"#445566" }}>{t.scoreLabel}: <span style={{ color:"#c8d0d8", fontWeight:700 }}>{totalScore}</span></div>
+              {isTimeAttack && (
+                <div style={{ fontSize:11, color:"#00c8ff", fontFamily:"'Courier New',Courier,monospace", letterSpacing:"0.1em", marginTop:2 }}>
+                  ⏱ {t.globalTimer}: <span style={{ fontWeight:900, color: taLeft > 60 ? "#00c8ff" : taLeft > 30 ? "#ffcc00" : "#ff4455" }}>{taLeft}s</span>
+                </div>
+              )}
               {streak >= 2 && (
                 <div style={{ fontSize:12, color: streak >= 5 ? "#ff6644" : "#ffaa00", fontFamily:"'Courier New',Courier,monospace", letterSpacing:"0.1em", marginTop:2 }}>
                   {t.streakLabel(streak)}
@@ -1635,6 +1883,10 @@ export default function GeoWatch() {
                 <div style={{ ...S.stitle, marginBottom:8 }}>{t.twentyRounds}</div>
                 <LbCol entries={leaderboard.twenty} />
               </div>
+              <div style={{ gridColumn:"1/-1" }}>
+                <div style={{ ...S.stitle, marginBottom:8, color:"#00c8ff" }}>⏱ {t.timeAttackLabel}</div>
+                <LbCol entries={taLBData} />
+              </div>
             </div>
           )}
           {username.trim()
@@ -1701,7 +1953,7 @@ export default function GeoWatch() {
                       return (
                         <div key={cont}>
                           <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
-                            <span style={{ color:"#c8d0d8" }}>{cont}</span>
+                            <span style={{ color:"#c8d0d8" }}>{contName(cont)}</span>
                             <span style={{ color:"#6677aa" }}>{pct}% &nbsp;({data.correct}/{data.total})</span>
                           </div>
                           <div style={{ height:5, background:"#1a1f2e", borderRadius:3, overflow:"hidden" }}>
@@ -1726,6 +1978,50 @@ export default function GeoWatch() {
                 ))}
               </div>
 
+              <div style={S.div} />
+              {/* ── STREAK CALENDAR ── */}
+              {(() => {
+                const dates   = ls.get(PLAYDATES_KEY) || [];
+                const dateSet = new Set(dates);
+                const today   = new Date();
+                const days    = 112; // 16 weeks
+                const cells   = [];
+                for (let i = days - 1; i >= 0; i--) {
+                  const d = new Date(today);
+                  d.setDate(today.getDate() - i);
+                  cells.push(d.toISOString().slice(0, 10));
+                }
+                const dayStreak = calcDayStreak(dates);
+                const awards = [
+                  { key:"d3",  label:"3 Days",  labelDe:"3 Tage",  days:3,  icon:"🔥" },
+                  { key:"w1",  label:"Weekly",  labelDe:"Woche",   days:7,  icon:"⭐" },
+                  { key:"m1",  label:"Monthly", labelDe:"Monat",   days:30, icon:"💎" },
+                ];
+                return (
+                  <>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                      <div style={S.stitle}>{lang==="de"?"SPIELKALENDER":"PLAY CALENDAR"}</div>
+                      <span style={{ fontSize:12, color:"#00ffb3", fontFamily:"'Courier New',Courier,monospace" }}>🔥 {dayStreak} {lang==="de"?"Tage":"day"} streak</span>
+                    </div>
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(16, 1fr)", gap:3 }}>
+                      {cells.map(d => (
+                        <div key={d} title={d} style={{ aspectRatio:"1", borderRadius:2, background: dateSet.has(d) ? "linear-gradient(135deg,#00ffb3,#00c8ff)" : "rgba(255,255,255,0.05)" }} />
+                      ))}
+                    </div>
+                    <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginTop:4 }}>
+                      {awards.map(a => {
+                        const earned = dayStreak >= a.days;
+                        return (
+                          <div key={a.key} style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 10px", borderRadius:4, border:`1px solid ${earned?"rgba(0,255,179,0.4)":"rgba(255,255,255,0.06)"}`, background:earned?"rgba(0,255,179,0.07)":"transparent", opacity:earned?1:0.4 }}>
+                            <span>{a.icon}</span>
+                            <span style={{ fontSize:11, color:earned?"#00ffb3":"#445566" }}>{lang==="de"?a.labelDe:a.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
               <div style={S.div} />
               <button style={{ ...S.btn("g"), fontSize:12, opacity:0.6 }} onClick={() => { ls.set(STATS_KEY, emptyStats()); setScreen("home"); }}>{t.resetStats}</button>
             </>
@@ -1821,6 +2117,169 @@ export default function GeoWatch() {
             <button style={S.btn("p")} onClick={() => startGame()}>{t.playSolo}</button>
             <button style={S.btn("g")} onClick={() => setScreen("home")}>{t.menu}</button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── PHOTO COMPARE SCREEN ──────────────────────────────────────────────────
+  if (screen === "compare") {
+    const taPct = timeLeft / 20;
+    const totalCmpScore = compareScores.reduce((a,b)=>a+b,0);
+    return (
+      <div style={S.app}>
+        <div style={S.scan}/>
+        <div style={S.hdr}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={S.logoBtn} onClick={()=>setScreen("home")}>GEOWATCH</div>
+            <LangSwitch/>
+          </div>
+          <div style={{fontSize:22,fontWeight:900,color:"#b464ff",fontFamily:"'Courier New',Courier,monospace"}}>{compareRound+1} / {COMPARE_ROUNDS}</div>
+        </div>
+        <div style={S.card}>
+          <div style={{fontSize:11,color:"#b464ff",letterSpacing:"0.15em",fontFamily:"'Courier New',Courier,monospace",marginBottom:6}}>🖼 {t.photoCompareQ(contName(compareTarget))}</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            {["left","right"].map(side=>{
+              const cam = side==="left"?compareLeft:compareRight;
+              const isSelected = compareSelected===side;
+              const isCorrect  = compareCorrect===side;
+              const showResult = !!compareSelected;
+              return (
+                <div key={side} style={{position:"relative",cursor:compareSelected?"default":"pointer",borderRadius:6,overflow:"hidden",border:`2px solid ${showResult?(isCorrect?"#00ffb3":"#ff4455"):"rgba(180,100,255,0.4)"}`,transition:"border 0.3s"}}
+                     onClick={()=>handleCompareAnswer(side)}>
+                  {cam?.imageUrl && <img src={cam.imageUrl} alt="" style={{width:"100%",aspectRatio:"16/9",objectFit:"cover",display:"block"}}/>}
+                  {showResult && (
+                    <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:isCorrect?"rgba(0,255,179,0.25)":"rgba(255,68,85,0.25)",fontSize:28}}>
+                      {isCorrect?"✓":"✗"}
+                    </div>
+                  )}
+                  {isSelected && !isCorrect && <div style={{position:"absolute",bottom:4,left:0,right:0,textAlign:"center",fontSize:10,color:"#ff4455",fontFamily:"monospace"}}>{contName(getContinent(cam?.countryCode))}</div>}
+                  {showResult && isCorrect && <div style={{position:"absolute",bottom:4,left:0,right:0,textAlign:"center",fontSize:10,color:"#00ffb3",fontFamily:"monospace"}}>{cam?.city}, {cam?.country}</div>}
+                </div>
+              );
+            })}
+          </div>
+          {compareSelected && (
+            <div style={{textAlign:"center",marginTop:10}}>
+              <div style={{fontSize:16,fontWeight:900,color:compareSelected===compareCorrect?"#00ffb3":"#ff4455",fontFamily:"monospace"}}>
+                {compareSelected===compareCorrect?"+500 pts":"0 pts"}
+              </div>
+              <div style={{fontSize:11,color:"#445566",marginTop:2}}>{t.scoreLabel}: {totalCmpScore}</div>
+              {compareRound+1 < COMPARE_ROUNDS
+                ? <button style={{...S.btn("p"),marginTop:10}} onClick={nextCompareRound}>{t.nextRound}</button>
+                : <button style={{...S.btn("p"),marginTop:10}} onClick={()=>setScreen("compare-over")}>{t.results}</button>
+              }
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === "compare-over") {
+    const total = compareScores.reduce((a,b)=>a+b,0);
+    const correct = compareScores.filter(s=>s>0).length;
+    return (
+      <div style={S.app}>
+        <div style={S.scan}/>
+        <div style={S.hdr}>
+          <div style={S.logoBtn} onClick={()=>setScreen("home")}>GEOWATCH</div>
+          <LangSwitch/>
+        </div>
+        <div style={S.card}>
+          <div style={{fontSize:18,fontWeight:900,letterSpacing:"0.2em",color:"#b464ff",fontFamily:"'Courier New',Courier,monospace",marginBottom:8}}>🖼 {t.photoCompare}</div>
+          <div style={{fontSize:36,fontWeight:900,color:"#00ffb3",fontFamily:"monospace",textAlign:"center",margin:"16px 0"}}>{total.toLocaleString()}</div>
+          <div style={{textAlign:"center",fontSize:13,color:"#6677aa",marginBottom:16}}>{correct} / {COMPARE_ROUNDS} {t.correct}</div>
+          <div style={S.g2}>
+            <button style={S.btn("p")} onClick={startPhotoCompare}>{t.playAgain}</button>
+            <button style={S.btn("g")} onClick={()=>setScreen("home")}>{t.mainMenu}</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── FRIENDS LEADERBOARD SCREEN ────────────────────────────────────────────
+  if (screen === "friends-lb") {
+    return (
+      <div style={S.app}>
+        <div style={S.scan}/>
+        <div style={S.hdr}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={S.logoBtn} onClick={()=>setScreen("home")}>GEOWATCH</div>
+            <LangSwitch/>
+          </div>
+          <button style={S.btn("g")} onClick={()=>setScreen("home")}>{t.back}</button>
+        </div>
+        <div style={S.card}>
+          <div style={{fontSize:18,fontWeight:900,letterSpacing:"0.2em",color:"#c8d0d8",fontFamily:"'Courier New',Courier,monospace"}}>{t.friendsTitle}</div>
+
+          {!friendGroup ? (
+            <>
+              <div style={{fontSize:13,color:"#6677aa",margin:"12px 0"}}>
+                {lang==="de"?"Erstelle eine Gruppe und teile den Code mit Freunden, oder trete einer bestehenden Gruppe bei.":"Create a group and share the code with friends, or join an existing group."}
+              </div>
+              <button style={{...S.btn("p"),marginBottom:8}} onClick={async()=>{
+                if(!username.trim()){setFriendError(lang==="de"?"Bitte zuerst Benutzernamen eingeben":"Please enter a username first");return;}
+                const code=genCode();
+                await db.createFriendGroup(code, username.trim());
+                const g={code,members:[username.trim()]};
+                setFriendGroup(g); ls.set("geowatch:friendgroup",g);
+              }}>{t.createGroup}</button>
+              <div style={{fontSize:11,color:"#445566",textAlign:"center",margin:"4px 0"}}>{lang==="de"?"— oder —":"— or —"}</div>
+              <input style={{...S.inp,marginBottom:8}} placeholder={t.groupCode} value={friendJoinInput} onChange={e=>setFriendJoinInput(e.target.value.toUpperCase())}/>
+              <button style={S.btn("g")} onClick={async()=>{
+                if(!username.trim()){setFriendError(lang==="de"?"Bitte zuerst Benutzernamen eingeben":"Please enter a username first");return;}
+                const members=await db.joinFriendGroup(friendJoinInput.trim(),username.trim());
+                if(!members){setFriendError(t.groupNotFound);return;}
+                const g={code:friendJoinInput.trim(),members};
+                setFriendGroup(g); ls.set("geowatch:friendgroup",g);
+              }}>{t.joinGroup}</button>
+              {friendError&&<div style={{fontSize:12,color:"#ff8899",marginTop:6}}>{friendError}</div>}
+            </>
+          ) : (
+            <>
+              <div style={{display:"flex",alignItems:"center",gap:8,margin:"12px 0",padding:"10px 14px",background:"rgba(0,255,179,0.06)",borderRadius:4,border:"1px solid rgba(0,255,179,0.2)"}}>
+                <div>
+                  <div style={{fontSize:10,color:"#445566",letterSpacing:"0.15em"}}>{t.groupCode}</div>
+                  <div style={{fontSize:20,fontWeight:900,color:"#00ffb3",fontFamily:"monospace",letterSpacing:"0.2em"}}>{friendGroup.code}</div>
+                  <div style={{fontSize:11,color:"#445566"}}>{friendGroup.members?.length||1} {t.members}: {(friendGroup.members||[]).join(", ")}</div>
+                </div>
+              </div>
+              <button style={{...S.btn("g"),marginBottom:4}} onClick={()=>{navigator.clipboard?.writeText(t.inviteText(friendGroup.code));}}>
+                {t.copyCode}
+              </button>
+              <button style={{...S.btn("g"),fontSize:11,opacity:0.5,marginBottom:12}} onClick={()=>{setFriendGroup(null);ls.set("geowatch:friendgroup",null);}}>
+                {lang==="de"?"Gruppe verlassen":"Leave Group"}
+              </button>
+              {friendsLBLoad ? (
+                <div style={{textAlign:"center",color:"#445566",padding:20}}>{t.loading}</div>
+              ) : (
+                <>
+                  <button style={{...S.btn("p"),marginBottom:12}} onClick={async()=>{
+                    setFriendsLBLoad(true);
+                    const d=await db.loadFriendsLB(friendGroup.members||[username]);
+                    setFriendsLBData(d); setFriendsLBLoad(false);
+                  }}>{lang==="de"?"🔄 LADEN":"🔄 LOAD"}</button>
+                  {["five","ten","fifteen","twenty"].map((key,i)=>{
+                    const labels=[t.fiveRounds,t.tenRounds,t.fifteenRounds,t.twentyRounds];
+                    return friendsLBData[key]?.length>0&&(
+                      <div key={key} style={{marginBottom:12}}>
+                        <div style={{...S.stitle,marginBottom:6}}>{labels[i]}</div>
+                        <LbCol entries={friendsLBData[key]}/>
+                      </div>
+                    );
+                  })}
+                  {friendsLBData.ta?.length>0&&(
+                    <div>
+                      <div style={{...S.stitle,marginBottom:6}}>{t.timeAttackLabel}</div>
+                      <LbCol entries={friendsLBData.ta}/>
+                    </div>
+                  )}
+                </>
+              )}
+            </>
+          )}
         </div>
       </div>
     );
