@@ -335,14 +335,14 @@ const T = {
 const FAQ_DATA = {
   en: [
     // ── Basics
-    { q: "How does GeoWatch work?",
+    { q: "How does GeoWatch work? 🌐",
       a: "GeoWatch shows you a real webcam snapshot from somewhere in the world — without any location info. You have 30 seconds to pick the correct city from 3 options. The faster you answer, the more points you earn. Each correct answer gives you 500 base points plus up to 500 speed bonus points (max. 1,000 per round)." },
-    { q: "Where do the camera images come from?",
+    { q: "Where do the camera images come from? 📡",
       a: "GeoWatch uses the Windy Webcams API with over 40,000 real webcams worldwide. All images are daylight snapshots — so you always see a bright, recognisable picture regardless of the time of day." },
-    { q: "How is the score calculated?",
+    { q: "How is the score calculated? 🏆",
       a: "Every correct answer earns 500 base points. On top of that you get a speed bonus: the faster you answer within the 30-second timer, the more bonus points you receive (up to +500). A wrong answer or timeout gives 0 points. Hints reduce your score (see below)." },
     // ── Game Modes
-    { q: "How many rounds can I choose?",
+    { q: "How many rounds can I choose? 🎮",
       a: "On the home screen you can choose between 5, 10, 15, or 20 rounds. The maximum possible score scales accordingly: 5,000 pts for 5 rounds up to 20,000 pts for 20 rounds." },
     { q: "What is Time Attack mode? ⏱",
       a: "In Time Attack mode you have exactly 3 minutes to complete as many rounds as possible — there is no round limit! Each round gives you 20 seconds. The game ends when the global timer hits zero. Your total score and the number of completed rounds are saved to a dedicated Time Attack leaderboard." },
@@ -365,28 +365,28 @@ const FAQ_DATA = {
     { q: "What is the Friends Leaderboard? 👥",
       a: "Create a private group by clicking \"Friends\" in the top menu. You receive a 6-digit group code — share it with your friends. Once they join, you can all see each other's scores across every game mode (5R, 10R, 15R, 20R, Time Attack) on a private leaderboard. Your group is saved on your device so you don't have to re-enter the code." },
     // ── Filters & Settings
-    { q: "What does the Region filter do?",
+    { q: "What does the Region filter do? 🗺️",
       a: "On the home screen you can restrict which cameras appear in your game. Choose from: All, Europe, Americas, Asia, Africa, Oceania, or Middle East. If a region has fewer than 5 available cameras, the game automatically falls back to all cameras." },
     { q: "What are AI Fun Facts? 🤖",
       a: "After every correct answer, an AI (Claude by Anthropic) generates a short, interesting fact about the city — 2–3 sentences with a source link. Fun Facts are generated in your chosen language (EN/DE) and cached so the same city never triggers a second API call." },
     // ── Stats & Leaderboard
-    { q: "What does the Stats page show?",
+    { q: "What does the Stats page show? 📊",
       a: "The Stats page tracks your personal history on this device: total games played, total score, best single game, overall accuracy, best streak ever, accuracy broken down by continent, and your last 10 games. It also shows a Play Calendar — a GitHub-style grid of the days you have played, including streak awards (🔥 3 days · ⭐ 7 days · 💎 30 days in a row)." },
     { q: "What is the Play Calendar? 📅",
       a: "The Play Calendar on the Stats page shows the last 16 weeks as a coloured grid — each square represents one day. Days you played are highlighted in green. Below the calendar you can see your current daily streak and earn awards for playing 3, 7, or 30 days in a row." },
-    { q: "How is the Leaderboard structured?",
+    { q: "How is the Leaderboard structured? 🥇",
       a: "The global leaderboard is split into separate columns: 5 Rounds, 10 Rounds, 15 Rounds, 20 Rounds, and Time Attack. Each column shows the top 20 scores of all time. Badges are displayed next to player names. The Friends Leaderboard works the same way but shows only the scores of your friend group." },
   ],
   de: [
     // ── Grundlagen
-    { q: "Wie funktioniert GeoWatch?",
+    { q: "Wie funktioniert GeoWatch? 🌐",
       a: "GeoWatch zeigt dir ein echtes Webcam-Bild von irgendwo auf der Welt — ohne Ortsangabe. Du hast 30 Sekunden Zeit, die richtige Stadt aus 3 Optionen zu wählen. Je schneller du antwortest, desto mehr Punkte bekommst du. Jede richtige Antwort bringt 500 Basispunkte plus bis zu 500 Schnelligkeitsbonus (max. 1.000 pro Runde)." },
-    { q: "Woher kommen die Kamerabilder?",
+    { q: "Woher kommen die Kamerabilder? 📡",
       a: "GeoWatch nutzt die Windy Webcams API mit über 40.000 echten Webcams weltweit. Alle Bilder sind Tageslicht-Aufnahmen — du siehst also immer ein helles, gut erkennbares Bild, unabhängig von der aktuellen Uhrzeit." },
-    { q: "Wie wird der Score berechnet?",
+    { q: "Wie wird der Score berechnet? 🏆",
       a: "Jede richtige Antwort bringt 500 Basispunkte. Dazu kommt ein Schnelligkeitsbonus: Je früher du innerhalb der 30 Sekunden antwortest, desto mehr Bonuspunkte erhältst du (bis zu +500). Eine falsche Antwort oder Zeitablauf gibt 0 Punkte. Tipps reduzieren deinen Score (siehe unten)." },
     // ── Spielmodi
-    { q: "Wie viele Runden kann ich wählen?",
+    { q: "Wie viele Runden kann ich wählen? 🎮",
       a: "Auf der Startseite kannst du zwischen 5, 10, 15 oder 20 Runden wählen. Die maximal erreichbare Punktzahl steigt entsprechend: 5.000 Pkt bei 5 Runden bis 20.000 Pkt bei 20 Runden." },
     { q: "Was ist der Zeitangriff-Modus? ⏱",
       a: "Im Zeitangriff-Modus hast du genau 3 Minuten Zeit, um so viele Runden wie möglich zu absolvieren — es gibt kein Runden-Limit! Pro Runde hast du 20 Sekunden. Das Spiel endet wenn der globale Timer auf null läuft. Dein Gesamtscore und die Anzahl der abgeschlossenen Runden werden in einer eigenen Zeitangriff-Rangliste gespeichert." },
@@ -409,16 +409,16 @@ const FAQ_DATA = {
     { q: "Was ist die Freunde-Rangliste? 👥",
       a: "Klicke oben im Menü auf \"Freunde\". Erstelle eine Gruppe und erhalte einen 6-stelligen Gruppen-Code — teile ihn mit deinen Freunden. Sobald sie beigetreten sind, seht ihr alle gegenseitig eure Scores in allen Spielmodi (5R, 10R, 15R, 20R, Zeitangriff) in einer privaten Rangliste. Deine Gruppe wird auf deinem Gerät gespeichert, du musst den Code nicht erneut eingeben." },
     // ── Filter & Einstellungen
-    { q: "Was macht der Regionen-Filter?",
+    { q: "Was macht der Regionen-Filter? 🗺️",
       a: "Auf der Startseite kannst du einschränken welche Kameras im Spiel erscheinen. Wähle aus: Alle, Europa, Amerika, Asien, Afrika, Ozeanien oder Naher Osten. Hat eine Region weniger als 5 verfügbare Kameras, fällt das Spiel automatisch auf alle Kameras zurück." },
     { q: "Was sind KI-Fun Facts? 🤖",
       a: "Nach jeder richtigen Antwort generiert eine KI (Claude von Anthropic) einen kurzen, interessanten Fakt über die Stadt — 2–3 Sätze mit einem Quellenlink. Fun Facts werden in deiner gewählten Sprache (DE/EN) generiert und gecacht, sodass dieselbe Stadt keinen zweiten API-Aufruf auslöst." },
     // ── Statistiken & Rangliste
-    { q: "Was zeigt die Statistiken-Seite?",
+    { q: "Was zeigt die Statistiken-Seite? 📊",
       a: "Die Statistiken-Seite zeigt deine persönliche Spielhistorie auf diesem Gerät: gespielte Spiele gesamt, Gesamtpunkte, bestes Einzelspiel, Gesamttrefferquote, bester Streak, Trefferquote aufgeschlüsselt nach Kontinent sowie deine letzten 10 Spiele. Außerdem siehst du den Spielkalender — ein GitHub-ähnliches Raster der Tage an denen du gespielt hast." },
     { q: "Was ist der Spielkalender? 📅",
       a: "Der Spielkalender auf der Statistiken-Seite zeigt die letzten 16 Wochen als farbiges Raster — jedes Kästchen ist ein Tag. Tage an denen du gespielt hast, sind grün markiert. Unter dem Kalender siehst du deinen aktuellen Tages-Streak und kannst Awards verdienen: 🔥 3 Tage · ⭐ 7 Tage · 💎 30 Tage in Folge gespielt." },
-    { q: "Wie ist die Rangliste aufgebaut?",
+    { q: "Wie ist die Rangliste aufgebaut? 🥇",
       a: "Die globale Rangliste ist in separate Spalten aufgeteilt: 5 Runden, 10 Runden, 15 Runden, 20 Runden und Zeitangriff. Jede Spalte zeigt die Top 20 aller Zeiten. Abzeichen werden neben den Spielernamen angezeigt. Die Freunde-Rangliste funktioniert genauso, zeigt aber nur die Scores deiner Freundesgruppe." },
   ],
 };
