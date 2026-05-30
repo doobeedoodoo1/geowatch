@@ -153,6 +153,83 @@
     .hero {
       padding: 96px 0 80px;
       text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ── WEBCAM COLLAGE ── */
+    .collage-bg {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      z-index: 0;
+      opacity: 0;
+      transition: opacity 1.2s ease;
+    }
+    .collage-bg.loaded { opacity: 1; }
+    .collage-cell {
+      overflow: hidden;
+      position: relative;
+    }
+    .collage-cell img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: brightness(0.28) saturate(0.6);
+      animation: kenburns var(--dur, 20s) ease-in-out var(--delay, 0s) infinite alternate;
+      transform-origin: var(--origin, 50% 50%);
+    }
+    @keyframes kenburns {
+      from { transform: scale(1); }
+      to   { transform: scale(1.12); }
+    }
+
+    /* Dark overlays for readability */
+    .collage-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 50%, rgba(7,8,13,0.55) 0%, transparent 100%),
+        linear-gradient(to bottom,  rgba(7,8,13,0.95) 0%,  rgba(7,8,13,0.1) 20%, rgba(7,8,13,0.1) 80%, rgba(7,8,13,0.95) 100%),
+        linear-gradient(to right,   rgba(7,8,13,0.7) 0%,  transparent 15%, transparent 85%, rgba(7,8,13,0.7) 100%);
+    }
+
+    /* Collage placeholder while loading */
+    .collage-placeholder {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #0a0f1a 0%, #07080d 50%, #0d1520 100%);
+      z-index: 0;
+    }
+
+    /* Ensure hero content stays above collage */
+    .hero .container { position: relative; z-index: 2; }
+
+    /* Text readability enhancements */
+    .hero h1 { text-shadow: 0 2px 30px rgba(0,0,0,0.8); }
+    .hero .hero-sub { text-shadow: 0 1px 12px rgba(0,0,0,0.9); }
+    .hero .hero-badge {
+      background: rgba(0,255,179,0.15);
+      backdrop-filter: blur(8px);
+      border-color: rgba(0,255,179,0.5);
+      text-shadow: none;
+    }
+    .hero-stats {
+      background: rgba(7,8,13,0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(0,255,179,0.15);
+      border-radius: 8px;
+      padding: 20px 32px;
+    }
+
+    @media(max-width:768px) {
+      .collage-bg { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(6, 1fr); }
+    }
+    @media(max-width:480px) {
+      .collage-bg { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(8, 1fr); }
     }
     .hero-badge {
       display: inline-block;
@@ -406,6 +483,10 @@
 
 <!-- ── HERO ── -->
 <section class="hero">
+  <!-- Webcam Collage Background -->
+  <div class="collage-placeholder"></div>
+  <div class="collage-bg" id="collage-bg"></div>
+  <div class="collage-overlay"></div>
   <div class="container">
     <div class="hero-badge">📡 40.000+ ECHTE WEBCAMS WELTWEIT</div>
     <h1>Kannst du erraten,<br><span>wo diese Kamera steht?</span></h1>
@@ -703,6 +784,83 @@
     </p>
   </div>
 </footer>
+
+<script>
+(async () => {
+  const EDGE    = 'https://muaquiygkhdqvkkglgau.supabase.co/functions/v1/windy-proxy';
+  const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11YXF1aXlna2hkcXZra2dsZ2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDM5MjMsImV4cCI6MjA5NTQ3OTkyM30.v3A6VDEoY65kExX2CUP0wYNhAqIHLlHL2gj_BaWLTKU';
+  const WINDY   = '1e4uK7lGVZybu0IkSLSNHvGeKZwDSdrT';
+  const NEEDED  = 24;
+  const origins = ['20% 30%','70% 20%','50% 80%','80% 60%','30% 70%','60% 40%',
+                   '40% 20%','10% 50%','90% 30%','50% 50%','25% 75%','75% 25%'];
+
+  // Try to load from sessionStorage cache first
+  const cached = sessionStorage.getItem('gw-collage');
+  if (cached) {
+    try { renderCollage(JSON.parse(cached)); return; } catch {}
+  }
+
+  // Fetch two batches in parallel for variety
+  const offsets = [Math.floor(Math.random() * 400), Math.floor(Math.random() * 400) + 400];
+  try {
+    const results = await Promise.allSettled(offsets.map(offset =>
+      fetch(EDGE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SB_KEY}`, 'apikey': SB_KEY },
+        body: JSON.stringify({ apiKey: WINDY, offset, limit: 50 })
+      }).then(r => r.json())
+    ));
+
+    const images = [];
+    for (const r of results) {
+      if (r.status !== 'fulfilled') continue;
+      const cams = r.value?.webcams || r.value || [];
+      const arr = Array.isArray(cams) ? cams : [];
+      for (const w of arr) {
+        const url = w.images?.day?.preview || w.images?.daylight?.preview || w.images?.current?.preview;
+        if (url && !url.includes('placeholder') && images.length < NEEDED * 2) {
+          images.push(url);
+        }
+      }
+    }
+
+    if (images.length >= NEEDED) {
+      // Shuffle and take 24
+      const shuffled = images.sort(() => Math.random() - 0.5).slice(0, NEEDED);
+      sessionStorage.setItem('gw-collage', JSON.stringify(shuffled));
+      renderCollage(shuffled);
+    }
+  } catch (e) {
+    console.log('Collage load failed:', e);
+  }
+
+  function renderCollage(urls) {
+    const bg = document.getElementById('collage-bg');
+    if (!bg) return;
+    bg.innerHTML = urls.map((url, i) => {
+      const dur    = (15 + (i % 7) * 1.5).toFixed(1) + 's';
+      const delay  = (-i * 0.8).toFixed(1) + 's';
+      const origin = origins[i % origins.length];
+      return `<div class="collage-cell">
+        <img src="${url}" loading="lazy" decoding="async"
+             style="--dur:${dur};--delay:${delay};--origin:${origin}"
+             onerror="this.parentElement.style.background='#0a0f1a'"/>
+      </div>`;
+    }).join('');
+
+    // Fade in once enough images loaded
+    let loaded = 0;
+    const imgs = bg.querySelectorAll('img');
+    const tryShow = () => { if (++loaded >= Math.min(12, imgs.length)) bg.classList.add('loaded'); };
+    imgs.forEach(img => {
+      if (img.complete) tryShow();
+      else { img.onload = tryShow; img.onerror = tryShow; }
+    });
+    // Fallback: show after 2s regardless
+    setTimeout(() => bg.classList.add('loaded'), 2000);
+  }
+})();
+</script>
 
 </body>
 </html>
