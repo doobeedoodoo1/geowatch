@@ -533,6 +533,42 @@ const ls = {
 
 // ── SUPABASE DB ───────────────────────────────────────────────────────────────
 const db = {
+  // ── Webcam Pool ──
+  async saveToPool(cams) {
+    if (!supabase || !cams?.length) return;
+    const rows = cams
+      .filter(c => c.id && c.city && c.city.toLowerCase() !== 'unknown')
+      .map(c => ({
+        webcam_id:    String(c.id),
+        city:         c.city,
+        country:      c.country,
+        country_code: c.countryCode,
+        continent:    c.continent,
+        lat:          c.lat,
+        lon:          c.lon,
+        last_seen:    new Date().toISOString(),
+      }));
+    if (!rows.length) return;
+    // Upsert in chunks of 100
+    for (let i = 0; i < rows.length; i += 100) {
+      await supabase.from("webcams_pool").upsert(rows.slice(i, i + 100), { onConflict: "webcam_id" });
+    }
+  },
+  async loadPool() {
+    if (!supabase) return [];
+    // Fetch random sample of up to 5000 cameras from the accumulated pool
+    const { data } = await supabase
+      .from("webcams_pool")
+      .select("webcam_id,city,country,country_code,continent,lat,lon")
+      .order("last_seen", { ascending: false })
+      .limit(5000);
+    return data || [];
+  },
+  async poolSize() {
+    if (!supabase) return 0;
+    const { count } = await supabase.from("webcams_pool").select("*", { count: "exact", head: true });
+    return count || 0;
+  },
   async loadLB() {
     if (!supabase) return { five: [], ten: [], fifteen: [], twenty: [] };
     const [r5, r10, r15, r20] = await Promise.all([
@@ -1000,29 +1036,68 @@ export default function GeoWatch() {
   useEffect(() => {
     (async () => {
       if (!supabase) { setScreen("setup"); return; }
-      const key   = ENV_WINDY_KEY || ls.get("geowatch:windykey");
-      const cache = ls.get("geowatch:camcache");
-      if (cache && Date.now() - cache.fetchedAt < CACHE_TTL && cache.cams?.length > 10) {
-        setPool(shuffle(cache.cams));
-        setScreen(key ? "home" : "setup");
-        return;
-      }
+      const key = ENV_WINDY_KEY || ls.get("geowatch:windykey");
       if (!key) { setScreen("setup"); return; }
-      setScreen("home");
-      setCamLoading(true);
-      setLoadProg([0, 15]);
-      setApiError("");
-      try {
-        const cams = await loadCams(key, (d, total) => setLoadProg([d, total]));
-        if (cams.length < 5) throw new Error(T.en.tooFewCameras);
-        const s = shuffle(cams);
-        setPool(s);
-        ls.set("geowatch:camcache", { cams: s, fetchedAt: Date.now() });
-      } catch (err) {
-        setApiError(err.message || T.en.unknownError);
-        setScreen("setup");
-      } finally {
-        setCamLoading(false);
+
+      // 1. Load Supabase pool immediately (fast, no Windy call needed)
+      const poolCams = await db.loadPool();
+
+      if (poolCams.length >= 200) {
+        // Pool big enough — use it right away
+        // Map DB rows back to cam objects (no imageUrl yet — fetched on demand)
+        const fromPool = poolCams.map(r => ({
+          id:          r.webcam_id,
+          city:        r.city,
+          country:     r.country,
+          countryCode: r.country_code,
+          continent:   r.continent,
+          lat:         r.lat,
+          lon:         r.lon,
+          imageUrl:    null, // fetched fresh per round
+        }));
+        setPool(shuffle(fromPool));
+        setScreen("home");
+
+        // 2. Background: fetch fresh Windy batch to enrich pool
+        const cache = ls.get("geowatch:camcache");
+        const needsRefresh = !cache || Date.now() - cache.fetchedAt > CACHE_TTL;
+        if (needsRefresh) {
+          setCamLoading(true);
+          setLoadProg([0, 15]);
+          loadCams(key, (d, total) => setLoadProg([d, total])).then(freshCams => {
+            if (freshCams.length >= 5) {
+              db.saveToPool(freshCams); // save to growing pool (non-blocking)
+              const merged = shuffle([...freshCams, ...fromPool]);
+              setPool(merged);
+              ls.set("geowatch:camcache", { cams: freshCams, fetchedAt: Date.now() });
+            }
+          }).catch(() => {}).finally(() => setCamLoading(false));
+        }
+      } else {
+        // Pool small or empty — fetch from Windy first
+        const localCache = ls.get("geowatch:camcache");
+        if (localCache && Date.now() - localCache.fetchedAt < CACHE_TTL && localCache.cams?.length > 10) {
+          setPool(shuffle([...localCache.cams, ...poolCams]));
+          setScreen("home");
+          return;
+        }
+        setScreen("home");
+        setCamLoading(true);
+        setLoadProg([0, 15]);
+        setApiError("");
+        try {
+          const cams = await loadCams(key, (d, total) => setLoadProg([d, total]));
+          if (cams.length < 5) throw new Error(T.en.tooFewCameras);
+          db.saveToPool(cams); // grow the pool
+          const s = shuffle(cams);
+          setPool(s);
+          ls.set("geowatch:camcache", { cams: s, fetchedAt: Date.now() });
+        } catch (err) {
+          setApiError(err.message || T.en.unknownError);
+          if (!poolCams.length) setScreen("setup");
+        } finally {
+          setCamLoading(false);
+        }
       }
     })();
   }, []);
@@ -1100,7 +1175,14 @@ export default function GeoWatch() {
   useEffect(() => {
     if (!currentCam) return;
     setImgLoading(true);
-    setCamImgUrl(currentCam.imageUrl);
+    // Pool-cameras have no imageUrl → fetch fresh from Windy
+    if (!currentCam.imageUrl) {
+      const key = ENV_WINDY_KEY || ls.get("geowatch:windykey");
+      if (key) refreshImageUrl(key, currentCam.id).then(url => { if (url) setCamImgUrl(url); else setImgUnusable(true); });
+      else setImgUnusable(true);
+    } else {
+      setCamImgUrl(currentCam.imageUrl);
+    }
     setFunFact(null);
     setFunFactLoad(false);
     setFunFactError(null);
@@ -1612,6 +1694,11 @@ export default function GeoWatch() {
           <div style={{ fontSize:13, color:"#6677aa", lineHeight:1.7 }}>{t.tagline}</div>
           <div style={{ marginTop:10, display:"flex", gap:8, justifyContent:"center", flexWrap:"wrap" }}>
             <span style={S.pill}>{camLoading ? "⟳ LOADING CAMERAS..." : t.camerasLoaded(pool.length)}</span>
+            {!camLoading && pool.length > 750 && (
+              <span style={{ ...S.pill, background:"rgba(0,200,255,0.1)", borderColor:"rgba(0,200,255,0.3)", color:"#00c8ff", fontSize:11 }}>
+                🌐 {lang==="de"?"Wachsender Pool":"Growing pool"}
+              </span>
+            )}
           </div>
           {camLoading && (
             <div style={{ width:"100%", height:3, background:"#1a1f2e", borderRadius:2, overflow:"hidden", marginTop:6 }}>
