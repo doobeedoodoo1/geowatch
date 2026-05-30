@@ -418,14 +418,16 @@ const db = {
     if (!supabase || !name?.trim()) return;
     await supabase.from("leaderboard").insert([{ name: name.trim(), score, date, rounds }]);
   },
-  async getFunFact(city) {
+  async getFunFact(city, lang = "en") {
     if (!supabase) return null;
-    const { data } = await supabase.from("funfacts").select("fact,source,url").eq("city", city).maybeSingle();
+    const key = `${city}__${lang}`;
+    const { data } = await supabase.from("funfacts").select("fact,source,url").eq("city", key).maybeSingle();
     return data || null;
   },
-  async saveFunFact(city, fact, source, url) {
+  async saveFunFact(city, fact, source, url, lang = "en") {
     if (!supabase) return;
-    await supabase.from("funfacts").upsert([{ city, fact, source, url }]);
+    const key = `${city}__${lang}`;
+    await supabase.from("funfacts").upsert([{ city: key, fact, source, url }]);
   },
   async loadDailyLB(date) {
     if (!supabase) return [];
@@ -472,7 +474,7 @@ const saveStats = (roundScores, sequence, pool, maxStreak) => {
 
 // ── FUN FACT (Gemini + Supabase cache) ───────────────────────────────────────
 const fetchFunFact = async (city, country, lang = "en") => {
-  const cached = await db.getFunFact(city);
+  const cached = await db.getFunFact(city, lang);
   if (cached) return cached;
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   if (!apiKey) return null;
@@ -497,7 +499,7 @@ const fetchFunFact = async (city, country, lang = "en") => {
     const data = await res.json();
     const text = data.content?.[0]?.text || "";
     const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
-    db.saveFunFact(city, parsed.fact, parsed.source, parsed.url);
+    db.saveFunFact(city, parsed.fact, parsed.source, parsed.url, lang);
     return parsed;
   } catch (err) {
     console.error("Fun Fact Fehler:", err);
@@ -649,7 +651,7 @@ const mapCam = (w) => ({
   imageUrl:    w.images?.day?.preview || w.images?.daylight?.preview || w.images?.current?.preview || null,
 });
 
-const LOCATION_TEXT_PATTERNS = /strada|street|rue\s|via\s|str\.|calle\s|foto-webcam\.eu|feratel|\d{1,3}\.\d+[°,]\s*\d/i;
+const LOCATION_TEXT_PATTERNS = /strada|street|rue\s|via\s|str\.|calle\s|foto-webcam\.eu|feratel|\d{1,3}\.\d+[°,]\s*\d|nz\s*transport|transport\s*agency|nzta|cctv|新闻|waka\s*kotahi/i;
 const STALE_MS = 30 * 24 * 60 * 60 * 1000;
 
 const fetchBatch = async (apiKey, offset) => {
@@ -1392,7 +1394,7 @@ export default function GeoWatch() {
           <div style={{ position:"relative", width:"100%", aspectRatio:"16/9", background:"#0a0c12", borderRadius:6, overflow:"hidden", border:"1px solid rgba(0,255,179,0.2)" }}>
             <div style={{ position:"absolute", top:0, left:0, right:0, height:60, background:"linear-gradient(to bottom, #07080d 0%, transparent 100%)", zIndex:15, pointerEvents:"none" }} />
             <div style={{ position:"absolute", top:0, right:0, width:"55%", height:36, background:"#07080d", zIndex:15, pointerEvents:"none" }} />
-            <div style={{ position:"absolute", bottom:0, left:0, right:0, height:50, background:"linear-gradient(to top, #07080d 0%, transparent 100%)", zIndex:15, pointerEvents:"none" }} />
+            <div style={{ position:"absolute", bottom:0, left:0, right:0, height:"18%", background:"linear-gradient(to top, #07080d 60%, transparent 100%)", zIndex:15, pointerEvents:"none" }} />
             <div style={{ position:"absolute", top:10, left:12, fontSize:10, letterSpacing:"0.18em", color:"#00ffb3", zIndex:20, background:"rgba(7,8,13,0.8)", padding:"2px 8px", borderRadius:3, fontFamily:"'Courier New',Courier,monospace" }}>
               ● CAM | ID {currentCam.id.slice(-5)}
             </div>
