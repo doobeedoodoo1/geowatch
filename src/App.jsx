@@ -54,8 +54,12 @@ const T = {
     selectRounds:          "Select Rounds",
     fiveRounds:            "5 ROUNDS",
     tenRounds:             "10 ROUNDS",
+    fifteenRounds:         "15 ROUNDS",
+    twentyRounds:          "20 ROUNDS",
     max5k:                 "max. 5,000 pts.",
     max10k:                "max. 10,000 pts.",
+    max15k:                "max. 15,000 pts.",
+    max20k:                "max. 20,000 pts.",
     region:                "Region",
     regionAll:             "🌍 All",
     regionEurope:          "🌍 Europe",
@@ -172,8 +176,12 @@ const T = {
     selectRounds:          "Rundenanzahl wählen",
     fiveRounds:            "5 RUNDEN",
     tenRounds:             "10 RUNDEN",
+    fifteenRounds:         "15 RUNDEN",
+    twentyRounds:          "20 RUNDEN",
     max5k:                 "max. 5.000 Pkt.",
     max10k:                "max. 10.000 Pkt.",
+    max15k:                "max. 15.000 Pkt.",
+    max20k:                "max. 20.000 Pkt.",
     region:                "Region",
     regionAll:             "🌍 Alle",
     regionEurope:          "🌍 Europa",
@@ -326,14 +334,20 @@ const matchRegion = (continent = "", region) => {
 };
 
 const getOptions = (correct, pool) => {
-  const correctContinent = getContinent(correct.countryCode);
-  const others = pool.filter(c => c.city !== correct.city);
-  const same = shuffle(others.filter(c => getContinent(c.countryCode) === correctContinent));
-  const diff = shuffle(others.filter(c => getContinent(c.countryCode) !== correctContinent));
-  const distractors = [...same.slice(0, 1), ...diff.slice(0, 1)];
+  const usedCountries = new Set([correct.country]);
+  const others = shuffle(pool.filter(c => c.city !== correct.city && c.country !== correct.country));
+  const distractors = [];
+  for (const cam of others) {
+    if (!usedCountries.has(cam.country)) {
+      usedCountries.add(cam.country);
+      distractors.push(cam);
+      if (distractors.length === 2) break;
+    }
+  }
+  // Fallback: falls nicht genug verschiedene Länder vorhanden
   if (distractors.length < 2) {
     const used = new Set(distractors.map(c => c.city));
-    for (const cam of shuffle(others)) {
+    for (const cam of shuffle(pool.filter(c => c.city !== correct.city))) {
       if (!used.has(cam.city)) { distractors.push(cam); used.add(cam.city); }
       if (distractors.length === 2) break;
     }
@@ -391,12 +405,14 @@ const ls = {
 // ── SUPABASE DB ───────────────────────────────────────────────────────────────
 const db = {
   async loadLB() {
-    if (!supabase) return { five: [], ten: [] };
-    const [r5, r10] = await Promise.all([
+    if (!supabase) return { five: [], ten: [], fifteen: [], twenty: [] };
+    const [r5, r10, r15, r20] = await Promise.all([
       supabase.from("leaderboard").select("name,score,date,badges").eq("rounds", 5).order("score", { ascending: false }).limit(20),
       supabase.from("leaderboard").select("name,score,date,badges").eq("rounds", 10).order("score", { ascending: false }).limit(20),
+      supabase.from("leaderboard").select("name,score,date,badges").eq("rounds", 15).order("score", { ascending: false }).limit(20),
+      supabase.from("leaderboard").select("name,score,date,badges").eq("rounds", 20).order("score", { ascending: false }).limit(20),
     ]);
-    return { five: r5.data || [], ten: r10.data || [] };
+    return { five: r5.data || [], ten: r10.data || [], fifteen: r15.data || [], twenty: r20.data || [] };
   },
   async addScore({ name, score, date, rounds = 5 }) {
     if (!supabase || !name?.trim()) return;
@@ -1233,9 +1249,11 @@ export default function GeoWatch() {
         </div>
         <div style={S.div} />
         <div style={S.stitle}>{t.selectRounds}</div>
-        <div style={S.g2}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8 }}>
           <button style={S.rndBtn(rounds===5)}  onClick={() => setRounds(5)}>{t.fiveRounds}<br/><span style={{ fontSize:10, opacity:0.6 }}>{t.max5k}</span></button>
           <button style={S.rndBtn(rounds===10)} onClick={() => setRounds(10)}>{t.tenRounds}<br/><span style={{ fontSize:10, opacity:0.6 }}>{t.max10k}</span></button>
+          <button style={S.rndBtn(rounds===15)} onClick={() => setRounds(15)}>{t.fifteenRounds}<br/><span style={{ fontSize:10, opacity:0.6 }}>{t.max15k}</span></button>
+          <button style={S.rndBtn(rounds===20)} onClick={() => setRounds(20)}>{t.twentyRounds}<br/><span style={{ fontSize:10, opacity:0.6 }}>{t.max20k}</span></button>
         </div>
 
         {/* ── Feature 1: REGION FILTER ── */}
@@ -1606,6 +1624,14 @@ export default function GeoWatch() {
               <div>
                 <div style={{ ...S.stitle, marginBottom:8 }}>{t.tenRounds}</div>
                 <LbCol entries={leaderboard.ten} />
+              </div>
+              <div>
+                <div style={{ ...S.stitle, marginBottom:8 }}>{t.fifteenRounds}</div>
+                <LbCol entries={leaderboard.fifteen} />
+              </div>
+              <div>
+                <div style={{ ...S.stitle, marginBottom:8 }}>{t.twentyRounds}</div>
+                <LbCol entries={leaderboard.twenty} />
               </div>
             </div>
           )}
