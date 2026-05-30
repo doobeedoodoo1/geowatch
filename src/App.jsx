@@ -124,6 +124,13 @@ const T = {
     play:                  "▶ PLAY",
     badgeRanking:          "Badge Ranking",
     perfectRounds:         "perfect rounds",
+    alltimeLB:             "🏆 ALLTIME",
+    byMode:                "BY MODE",
+    alltimeTitle:          "ALL-TIME RANKING",
+    alltimeSub:            "Total score across all game modes",
+    totalScore2:           "TOTAL",
+    gamesCount:            "GAMES",
+    bestGame2:             "BEST",
     yourScore:             "YOUR SCORE",
     codeForOpponent:       "CODE FOR YOUR OPPONENT",
     opponentInstruction:   "Opponent → Join duel → Enter code",
@@ -270,6 +277,13 @@ const T = {
     play:                  "▶ SPIELEN",
     badgeRanking:          "Abzeichen-Rangfolge",
     perfectRounds:         "perfekte Runden",
+    alltimeLB:             "🏆 ALLTIME",
+    byMode:                "NACH MODUS",
+    alltimeTitle:          "ALLTIME RANKING",
+    alltimeSub:            "Gesamtpunkte über alle Spielmodi",
+    totalScore2:           "GESAMT",
+    gamesCount:            "SPIELE",
+    bestGame2:             "BESTES",
     yourScore:             "DEIN ERGEBNIS",
     codeForOpponent:       "CODE FÜR DEINEN GEGNER",
     opponentInstruction:   `Gegner → "Duell beitreten" → Code eingeben`,
@@ -559,6 +573,12 @@ const db = {
   async loadTimeAttackLB() {
     if (!supabase) return [];
     const { data } = await supabase.from("time_attack_lb").select("name,score,rounds_completed,date,badges").order("score", { ascending: false }).limit(20);
+    return data || [];
+  },
+  async loadAllTimeLB() {
+    if (!supabase) return [];
+    const { data, error } = await supabase.rpc("alltime_leaderboard");
+    if (error) { console.error("alltime_leaderboard RPC error:", error); return []; }
     return data || [];
   },
   async addTimeAttackScore({ name, score, rounds_completed, date, badges = 0 }) {
@@ -948,6 +968,8 @@ export default function GeoWatch() {
   const [friendsLBLoad,  setFriendsLBLoad] = useState(false);
   // ── Time Attack Leaderboard
   const [taLBData,       setTaLBData]      = useState([]);
+  const [allTimeLBData,  setAllTimeLBData] = useState([]);
+  const [lbTab,          setLbTab]         = useState("modes"); // "modes" | "alltime"
 
   const t          = T[lang];
   const currentCam = sequence.length && pool.length ? pool[sequence[roundIdx]] : null;
@@ -1126,9 +1148,10 @@ export default function GeoWatch() {
   useEffect(() => {
     if (screen !== "leaderboard") return;
     setLbLoading(true);
-    Promise.all([db.loadLB(), db.loadTimeAttackLB()]).then(([lb, ta]) => {
+    Promise.all([db.loadLB(), db.loadTimeAttackLB(), db.loadAllTimeLB()]).then(([lb, ta, at]) => {
       setLeaderboard(lb);
       setTaLBData(ta);
+      setAllTimeLBData(at);
       setLbLoading(false);
     });
   }, [screen]);
@@ -1928,9 +1951,58 @@ export default function GeoWatch() {
         </div>
         <div style={S.card}>
           <div style={{ fontSize:18, fontWeight:900, letterSpacing:"0.2em", color:"#c8d0d8", fontFamily:"'Courier New',Courier,monospace" }}>{t.leaderboardTitle}</div>
+
+          {/* ── TAB SWITCHER ── */}
+          <div style={{ display:"flex", gap:8 }}>
+            <button
+              style={{ ...S.rndBtn(lbTab==="modes"), flex:1, fontSize:13 }}
+              onClick={() => setLbTab("modes")}>
+              🎮 {t.byMode}
+            </button>
+            <button
+              style={{ ...S.rndBtn(lbTab==="alltime"), flex:1, fontSize:13, ...(lbTab==="alltime" ? { borderColor:"#ffcc00", color:"#ffcc00", background:"rgba(255,204,0,0.1)" } : {}) }}
+              onClick={() => setLbTab("alltime")}>
+              {t.alltimeLB}
+            </button>
+          </div>
+
           {lbLoading ? (
             <div style={{ textAlign:"center", color:"#445566", padding:40 }}>{t.loading}</div>
+          ) : lbTab === "alltime" ? (
+            /* ── ALLTIME VIEW ── */
+            <>
+              <div style={{ fontSize:13, color:"#6677aa", marginTop:-4 }}>{t.alltimeSub}</div>
+              {allTimeLBData.length === 0 ? (
+                <div style={{ color:"#445566", fontSize:13, padding:"16px 0" }}>{t.noEntries}</div>
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  {allTimeLBData.map((e, i) => {
+                    const rankColor = i===0?"#ffcc00":i===1?"#aaaacc":i===2?"#cc8866":"#445566";
+                    const rankLabel = i===0?"◈":i===1?"◇":i===2?"◆":`${i+1}.`;
+                    return (
+                      <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", background:i===0?"rgba(255,204,0,0.07)":i<3?"rgba(0,255,179,0.04)":"rgba(255,255,255,0.02)", borderRadius:6, border:`1px solid ${i===0?"rgba(255,204,0,0.4)":i<3?"rgba(0,255,179,0.2)":"rgba(255,255,255,0.05)"}` }}>
+                        {/* Rank */}
+                        <div style={{ fontSize:14, fontWeight:900, color:rankColor, minWidth:24, fontFamily:"'Courier New',Courier,monospace", flexShrink:0 }}>{rankLabel}</div>
+                        {/* Name */}
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:15, fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.name}</div>
+                          <div style={{ fontSize:11, color:"#445566", marginTop:1 }}>
+                            {t.gamesCount}: {e.games_played} &nbsp;·&nbsp; {t.bestGame2}: {Number(e.best_game).toLocaleString()}
+                          </div>
+                        </div>
+                        {/* Total */}
+                        <div style={{ textAlign:"right", flexShrink:0 }}>
+                          <div style={{ fontWeight:900, color:"#ffcc00", fontSize:16, fontFamily:"'Courier New',Courier,monospace" }}>{Number(e.total_score).toLocaleString()}</div>
+                          <div style={{ fontSize:10, color:"#445566", letterSpacing:"0.1em" }}>{t.totalScore2}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           ) : (
+            /* ── BY MODE VIEW ── */
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
               <div>
                 <div style={{ ...S.stitle, marginBottom:8 }}>{t.fiveRounds}</div>
