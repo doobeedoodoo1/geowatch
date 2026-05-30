@@ -184,7 +184,29 @@
       </div>
     </div>
 
-    <!-- ROW 3: Beliebteste Modi + Uhrzeiten -->
+    <!-- ROW 3: Duelle + Foto-Vergleich -->
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">⚔️ Duelle</div>
+        <div class="stat-row"><span class="slabel">Duelle gesamt</span><span class="sval green" id="s-duels-total">–</span></div>
+        <div class="stat-row"><span class="slabel">Abgeschlossen</span><span class="sval green" id="s-duels-done">–</span></div>
+        <div class="stat-row"><span class="slabel">Ausstehend / offen</span><span class="sval yellow" id="s-duels-pending">–</span></div>
+        <div class="stat-row"><span class="slabel">Duelle heute</span><span class="sval blue" id="s-duels-today">–</span></div>
+        <div class="stat-row"><span class="slabel">Abschluss-Rate</span><span class="sval" id="s-duels-rate">–</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🖼 Bildvergleich</div>
+        <div class="stat-row"><span class="slabel">Spiele gesamt</span><span class="sval" style="color:#b464ff" id="s-cmp-total">–</span></div>
+        <div class="stat-row"><span class="slabel">Spiele heute</span><span class="sval" style="color:#b464ff" id="s-cmp-today">–</span></div>
+        <div class="stat-row"><span class="slabel">Ø Trefferquote</span><span class="sval" id="s-cmp-acc">–</span></div>
+        <div class="stat-row"><span class="slabel">Höchstscore</span><span class="sval" id="s-cmp-max">–</span></div>
+        <div style="margin-top:12px;padding:10px;background:rgba(180,100,255,0.06);border:1px solid rgba(180,100,255,0.2);border-radius:4px;font-size:12px;color:var(--muted)">
+          Tracking aktiv ab nächstem Deployment. Ältere Spiele sind nicht erfasst.
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 4: Beliebteste Modi + Uhrzeiten -->
     <div class="grid2">
       <div class="card">
         <div class="card-title">Beliebteste Spielmodi</div>
@@ -322,15 +344,33 @@ async function loadStats() {
       $('rounds-chart').innerHTML = '<p style="color:var(--muted);font-size:13px">Keine Daten</p>';
     }
 
+    // Duel stats
+    $('s-duels-total').textContent   = fmt(s.duels_total);
+    $('s-duels-done').textContent    = fmt(s.duels_done);
+    $('s-duels-pending').textContent = fmt(s.duels_pending);
+    $('s-duels-today').textContent   = fmt(s.duels_today);
+    const duelRate = s.duels_total > 0 ? Math.round((s.duels_done / s.duels_total) * 100) : 0;
+    $('s-duels-rate').textContent    = `${duelRate}%`;
+
+    // Photo compare stats
+    $('s-cmp-total').textContent = fmt(s.cmp_total);
+    $('s-cmp-today').textContent = fmt(s.cmp_today);
+    $('s-cmp-acc').textContent   = s.cmp_avg_acc != null ? `${Math.round(s.cmp_avg_acc * 100 / 5)}%` : '–';
+    $('s-cmp-max').textContent   = s.cmp_max ? fmt(s.cmp_max) + ' Pkt' : '–';
+
     // Mode popularity chart
     if (s.mode_share) {
       const ms = s.mode_share;
-      const total = (ms.standard||0) + (ms.timeattack||0) + (ms.daily||0);
-      const modeMax = Math.max(ms.standard||0, ms.timeattack||0, ms.daily||0);
+      const cmpTotal = s.cmp_total || 0;
+      const duelsDone = s.duels_done || 0;
+      const total = (ms.standard||0) + (ms.timeattack||0) + (ms.daily||0) + cmpTotal + duelsDone;
+      const modeMax = Math.max(ms.standard||0, ms.timeattack||0, ms.daily||0, cmpTotal, duelsDone);
       $('mode-chart').innerHTML = [
-        barHtml('🎮 Standard',            ms.standard||0,   modeMax, '#00ffb3'),
-        barHtml('⏱ Zeitangriff',          ms.timeattack||0, modeMax, '#00c8ff'),
-        barHtml('🌍 Tägliche Challenge',  ms.daily||0,      modeMax, '#ffcc00'),
+        barHtml('🎮 Standard',             ms.standard||0,   modeMax, '#00ffb3'),
+        barHtml('⏱ Zeitangriff',           ms.timeattack||0, modeMax, '#00c8ff'),
+        barHtml('🌍 Tägliche Challenge',   ms.daily||0,      modeMax, '#ffcc00'),
+        barHtml('⚔️ Duelle (abgeschl.)',   duelsDone,        modeMax, '#ff8844'),
+        barHtml('🖼 Bildvergleich',        cmpTotal,         modeMax, '#b464ff'),
       ].join('') + `<div style="margin-top:10px;font-size:12px;color:var(--muted)">Gesamt: ${fmt(total)} Spiele</div>`;
     }
 

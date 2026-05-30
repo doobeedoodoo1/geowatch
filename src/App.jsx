@@ -2369,6 +2369,18 @@ export default function GeoWatch() {
   if (screen === "compare-over") {
     const total = compareScores.reduce((a,b)=>a+b,0);
     const correct = compareScores.filter(s=>s>0).length;
+    // Save to DB once on mount
+    useEffect(() => {
+      if (username.trim() && supabase) {
+        supabase.from("photo_compare_lb").insert([{
+          name: username.trim(),
+          score: total,
+          correct_answers: correct,
+          rounds: COMPARE_ROUNDS,
+          date: new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-GB"),
+        }]).then(({ error }) => { if (error) console.error("photo_compare save:", error); });
+      }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
     return (
       <div style={S.app}>
         <div style={S.scan}/>
