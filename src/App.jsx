@@ -29,8 +29,11 @@ const CONTINENT_MAP = {
   AU:"OC",NZ:"OC",FJ:"OC",PG:"OC",
 };
 const getContinent = (cc) => CONTINENT_MAP[cc?.toUpperCase()] || "EU";
-const CONTINENT_NAMES = { EU:"Europe", NA:"North America", SA:"South America", AS:"Asia", AF:"Africa", OC:"Oceania", ME:"Middle East" };
-const contName = (code) => CONTINENT_NAMES[code] || code;
+const CONTINENT_NAMES = {
+  en: { EU:"Europe", NA:"North America", SA:"South America", AS:"Asia", AF:"Africa", OC:"Oceania", ME:"Middle East" },
+  de: { EU:"Europa",  NA:"Nordamerika",  SA:"Südamerika",   AS:"Asien", AF:"Afrika", OC:"Ozeanien", ME:"Naher Osten" },
+};
+const contName = (code, lang = "en") => (CONTINENT_NAMES[lang] || CONTINENT_NAMES.en)[code] || code;
 
 // â”€â”€ TRANSLATIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const T = {
@@ -1948,20 +1951,34 @@ export default function GeoWatch() {
                   <div style={S.div} />
                   <div style={S.stitle}>{t.byContinent}</div>
                   <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                    {Object.entries(st.continentStats).sort((a,b) => b[1].total - a[1].total).map(([cont, data]) => {
-                      const pct = data.total > 0 ? Math.round(data.correct / data.total * 100) : 0;
-                      return (
-                        <div key={cont}>
-                          <div style={{ display:"flex", justifyContent:"space-between", fontSize:15, marginBottom:4 }}>
-                            <span style={{ color:"#c8d0d8" }}>{contName(cont)}</span>
-                            <span style={{ color:"#6677aa" }}>{pct}% &nbsp;({data.correct}/{data.total})</span>
+                    {(() => {
+                      // Merge old full-name keys (e.g. "Europe") with new code keys (e.g. "EU")
+                      const nameToCode = {};
+                      Object.values(CONTINENT_NAMES.en).forEach((name, i) => {
+                        nameToCode[name] = Object.keys(CONTINENT_NAMES.en)[i];
+                      });
+                      const merged = {};
+                      Object.entries(st.continentStats).forEach(([cont, data]) => {
+                        const code = nameToCode[cont] || cont;
+                        if (!merged[code]) merged[code] = { correct:0, total:0 };
+                        merged[code].correct += data.correct;
+                        merged[code].total   += data.total;
+                      });
+                      return Object.entries(merged).sort((a,b) => b[1].total - a[1].total).map(([cont, data]) => {
+                        const pct = data.total > 0 ? Math.round(data.correct / data.total * 100) : 0;
+                        return (
+                          <div key={cont}>
+                            <div style={{ display:"flex", justifyContent:"space-between", fontSize:15, marginBottom:4 }}>
+                              <span style={{ color:"#c8d0d8" }}>{contName(cont, lang)}</span>
+                              <span style={{ color:"#6677aa" }}>{pct}% &nbsp;({data.correct}/{data.total})</span>
+                            </div>
+                            <div style={{ height:5, background:"#1a1f2e", borderRadius:3, overflow:"hidden" }}>
+                              <div style={{ height:"100%", width:`${pct}%`, background:"linear-gradient(90deg,#00ffb3,#00c8ff)", borderRadius:3, transition:"width 0.4s" }} />
+                            </div>
                           </div>
-                          <div style={{ height:5, background:"#1a1f2e", borderRadius:3, overflow:"hidden" }}>
-                            <div style={{ height:"100%", width:`${pct}%`, background:"linear-gradient(90deg,#00ffb3,#00c8ff)", borderRadius:3, transition:"width 0.4s" }} />
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      });
+                    })()}
                   </div>
                 </>
               )}
@@ -2137,7 +2154,7 @@ export default function GeoWatch() {
           <div style={{fontSize:22,fontWeight:900,color:"#b464ff",fontFamily:"'Courier New',Courier,monospace"}}>{compareRound+1} / {COMPARE_ROUNDS}</div>
         </div>
         <div style={S.card}>
-          <div style={{fontSize:14,color:"#b464ff",letterSpacing:"0.15em",fontFamily:"'Courier New',Courier,monospace",marginBottom:6}}>ðŸ–¼ {t.photoCompareQ(contName(compareTarget))}</div>
+          <div style={{fontSize:14,color:"#b464ff",letterSpacing:"0.15em",fontFamily:"'Courier New',Courier,monospace",marginBottom:6}}>ðŸ–¼ {t.photoCompareQ(contName(compareTarget, lang))}</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
             {["left","right"].map(side=>{
               const cam = side==="left"?compareLeft:compareRight;
@@ -2153,7 +2170,7 @@ export default function GeoWatch() {
                       {isCorrect?"âœ“":"âœ—"}
                     </div>
                   )}
-                  {isSelected && !isCorrect && <div style={{position:"absolute",bottom:4,left:0,right:0,textAlign:"center",fontSize:13,color:"#ff4455",fontFamily:"monospace"}}>{contName(getContinent(cam?.countryCode))}</div>}
+                  {isSelected && !isCorrect && <div style={{position:"absolute",bottom:4,left:0,right:0,textAlign:"center",fontSize:13,color:"#ff4455",fontFamily:"monospace"}}>{contName(getContinent(cam?.countryCode), lang)}</div>}
                   {showResult && isCorrect && <div style={{position:"absolute",bottom:4,left:0,right:0,textAlign:"center",fontSize:13,color:"#00ffb3",fontFamily:"monospace"}}>{cam?.city}, {cam?.country}</div>}
                 </div>
               );
@@ -2287,5 +2304,6 @@ export default function GeoWatch() {
 
   return <div style={{ color:"#00ffb3", padding:40 }}>{t.loading}</div>;
 }
+
 
 
