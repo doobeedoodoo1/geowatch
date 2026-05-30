@@ -1,17 +1,17 @@
-﻿import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-// â”€â”€ SUPABASE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── SUPABASE ──────────────────────────────────────────────────────────────────
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase     = SUPABASE_URL && SUPABASE_KEY ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
-// â”€â”€ CONSTANTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const ROUND_TIME = 30;
 const MAX_SCORE  = 1000;
 const CACHE_TTL  = 2 * 60 * 60 * 1000;
 
-// â”€â”€ CONTINENT MAP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── CONTINENT MAP ─────────────────────────────────────────────────────────────
 const CONTINENT_MAP = {
   DE:"EU",AT:"EU",CH:"EU",FR:"EU",GB:"EU",IT:"EU",ES:"EU",PT:"EU",NL:"EU",BE:"EU",
   SE:"EU",NO:"EU",DK:"EU",FI:"EU",PL:"EU",CZ:"EU",SK:"EU",HU:"EU",RO:"EU",BG:"EU",
@@ -35,25 +35,25 @@ const CONTINENT_NAMES = {
 };
 const contName = (code, lang = "en") => (CONTINENT_NAMES[lang] || CONTINENT_NAMES.en)[code] || code;
 
-// â”€â”€ TRANSLATIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── TRANSLATIONS ──────────────────────────────────────────────────────────────
 const T = {
   en: {
     initializing:          "INITIALIZING...",
-    supabaseError:         "âš  Supabase not connected",
+    supabaseError:         "⚠ Supabase not connected",
     supabaseErrorDesc:     "Connect Supabase in Lovable (top right) and reload the page.",
-    step1:                 "Step 1 â€” Get a free Windy API key",
-    step2:                 "Step 2 â€” Enter API key",
-    errorLabel:            "âš  Error",
-    loadCameras:           "â–¶ LOAD CAMERAS",
-    useCache:              (n) => `â† USE CACHE (${n} cameras)`,
+    step1:                 "Step 1 — Get a free Windy API key",
+    step2:                 "Step 2 — Enter API key",
+    errorLabel:            "⚠ Error",
+    loadCameras:           "▶ LOAD CAMERAS",
+    useCache:              (n) => `← USE CACHE (${n} cameras)`,
     loadingCameras:        "LOADING CAMERAS...",
-    leaderboard:           "â—ˆ LEADERBOARD",
+    leaderboard:           "◈ LEADERBOARD",
     leaderboardTitle:      "LEADERBOARD",
-    tagline:               "Live cameras worldwide Â· Identify the city Â· 3 options Â· Speed matters",
-    camerasLoaded:         (n) => `ðŸ“¡ ${n} cameras loaded`,
+    tagline:               "Live cameras worldwide · Identify the city · 3 options · Speed matters",
+    camerasLoaded:         (n) => `📡 ${n} cameras loaded`,
     scoring:               "Scoring",
     basePoints:            "Base points for each correct answer",
-    speedBonus:            "Speed bonus â€” the faster, the more",
+    speedBonus:            "Speed bonus — the faster, the more",
     maxPoints:             "Max points for instant correct answer",
     zeroPoints:            "Points for wrong answer or timeout",
     selectRounds:          "Select Rounds",
@@ -66,86 +66,86 @@ const T = {
     max15k:                "max. 15,000 pts.",
     max20k:                "max. 20,000 pts.",
     region:                "Region",
-    regionAll:             "ðŸŒ All",
-    regionEurope:          "ðŸŒ Europe",
-    regionAmericas:        "ðŸŒŽ Americas",
-    regionAsia:            "ðŸŒ Asia",
-    regionAfrica:          "ðŸŒ Africa",
-    regionOceania:         "ðŸŒ Oceania",
-    regionMiddleEast:      "ðŸŒ Middle East",
-    regionTooFew:          "Not enough cameras in this region â€” playing with all cameras.",
+    regionAll:             "🌍 All",
+    regionEurope:          "🌍 Europe",
+    regionAmericas:        "🌎 Americas",
+    regionAsia:            "🌏 Asia",
+    regionAfrica:          "🌍 Africa",
+    regionOceania:         "🌏 Oceania",
+    regionMiddleEast:      "🌍 Middle East",
+    regionTooFew:          "Not enough cameras in this region — playing with all cameras.",
     zoomModeLabel:         "ZOOM MODE",
-    zoomHint:              "ðŸ” ZOOM",
+    zoomHint:              "🔍 ZOOM",
     operativeId:           "Operative ID",
     usernamePlaceholder:   "Your username...",
-    startMission:          (n) => `â–¶ START MISSION (${n} Rounds)`,
+    startMission:          (n) => `▶ START MISSION (${n} Rounds)`,
     duels:                 "Duels",
-    createDuel:            "âš” CREATE",
-    joinDuelBtn:           "â†— JOIN",
-    reloadCameras:         "âš™ API-KEY / RELOAD CAMERAS",
-    back:                  "â† BACK",
+    createDuel:            "⚔ CREATE",
+    joinDuelBtn:           "↗ JOIN",
+    reloadCameras:         "⚙ API-KEY / RELOAD CAMERAS",
+    back:                  "← BACK",
     joinDuelTitle:         "Join Duel",
     yourName:              "Your Name",
     duelCode:              "Duel Code",
-    accept:                "âš” ACCEPT",
+    accept:                "⚔ ACCEPT",
     codeNotFound:          "Code not found.",
     duelEnded:             "Duel already ended.",
     challengerPlaying:     "Challenger is still playing.",
-    duelBadge:             "âš” DUEL",
+    duelBadge:             "⚔ DUEL",
     roundLabel:            "ROUND",
     scoreLabel:            "SCORE",
-    streakLabel:           (n) => `ðŸ”¥ ${n}x STREAK`,
+    streakLabel:           (n) => `🔥 ${n}x STREAK`,
     newRecord:             "NEW STREAK RECORD!",
     noImage:               "NO IMAGE AVAILABLE",
     whereIsCamera:         "WHERE IS THIS CAMERA?",
-    hintContinent:         "ðŸ’¡ CONTINENT  âˆ’150 pts",
-    hintClimate:           "ðŸŒ¡ï¸ CLIMATE  âˆ’200 pts",
+    hintContinent:         "💡 CONTINENT  −150 pts",
+    hintClimate:           "🌡️ CLIMATE  −200 pts",
     hintContinentLabel:    "CONTINENT",
     hintClimateLabel:      "CLIMATE",
     hintLoading:           "Loading hint...",
     locationRevealed:      "LOCATION REVEALED",
     pointsEarned:          (n) => `+${n} points`,
     streakBonus:           (n) => `+${n} streak bonus`,
-    hintPenalty:           (n) => `âˆ’${n} hint penalty`,
+    hintPenalty:           (n) => `−${n} hint penalty`,
     noPoints:              "No points",
     loadingFunFact:        "LOADING FUN FACT...",
     funFactError:          "FUN FACT ERROR",
-    funFact:               "â—ˆ FUN FACT",
-    nextRound:             "NEXT ROUND â†’",
-    results:               "RESULTS â†’",
-    missionComplete:       (n) => `MISSION COMPLETE Â· ${n} ROUNDS`,
-    pointsMax:             (n) => `POINTS Â· MAX. ${n}`,
+    funFact:               "◈ FUN FACT",
+    nextRound:             "NEXT ROUND →",
+    results:               "RESULTS →",
+    missionComplete:       (n) => `MISSION COMPLETE · ${n} ROUNDS`,
+    pointsMax:             (n) => `POINTS · MAX. ${n}`,
     roundSummary:          "Round Summary",
     roundN:                (n) => `Round ${n}`,
-    playAgain:             "â–¶ PLAY AGAIN",
-    mainMenu:              "â† MAIN MENU",
+    playAgain:             "▶ PLAY AGAIN",
+    mainMenu:              "← MAIN MENU",
     loading:               "Loading...",
     noEntries:             "No entries yet.",
-    play:                  "â–¶ PLAY",
+    play:                  "▶ PLAY",
     badgeRanking:          "Badge Ranking",
     perfectRounds:         "perfect rounds",
     yourScore:             "YOUR SCORE",
     codeForOpponent:       "CODE FOR YOUR OPPONENT",
-    opponentInstruction:   "Opponent â†’ Join duel â†’ Enter code",
+    opponentInstruction:   "Opponent → Join duel → Enter code",
     result:                "RESULT",
     you:                   (name) => `YOU (${name})`,
-    winner:                "WINNER â—ˆ",
-    playSolo:              "â–¶ PLAY SOLO",
-    menu:                  "â† MENU",
-    tooFewCameras:         "Too few active cameras. Please wait 1â€“2 min and try again (new API keys need some time to activate).",
+    winner:                "WINNER ◈",
+    playSolo:              "▶ PLAY SOLO",
+    menu:                  "← MENU",
+    tooFewCameras:         "Too few active cameras. Please wait 1–2 min and try again (new API keys need some time to activate).",
     unknownError:          "Unknown error",
     emptyResponse:         "Empty response from API",
     usernameRequired:      "Please enter a username",
-    backToMenu:            "â† BACK TO MENU",
+    backToMenu:            "← BACK TO MENU",
     dailyChallenge:        "DAILY CHALLENGE",
     dailySubtitle:         (n) => `${n} players today`,
     alreadyPlayed:         "Already played today",
-    startDailyBtn:         "â–¶ START DAILY CHALLENGE",
+    startDailyBtn:         "▶ START DAILY CHALLENGE",
     dailyComplete:         "DAILY CHALLENGE COMPLETE",
     dailyRank:             (rank, total) => `Rank ${rank} of ${total} players today`,
     nextChallenge:         (cd) => `Next challenge in ${cd}`,
     todayTop:              "TODAY'S TOP 10",
-    shareResult:           "ðŸ“¤ SHARE RESULT",
+    shareResult:           "📤 SHARE RESULT",
     stats:                 "STATS",
     statsTitle:            "STATISTICS",
     gamesPlayed:           "Games Played",
@@ -155,23 +155,23 @@ const T = {
     bestStreak:            "Best Streak",
     byContinent:           "Accuracy by Continent",
     recentGames:           "Recent Games",
-    resetStats:            "â†º Reset Stats",
-    noStats:               "No stats yet â€” play some rounds!",
+    resetStats:            "↺ Reset Stats",
+    noStats:               "No stats yet — play some rounds!",
     correct:               "correct",
     // Time Attack
-    timeAttack:            "â± TIME ATTACK",
+    timeAttack:            "⏱ TIME ATTACK",
     timeAttackSub:         "max. rounds in 3 min",
     timeAttackLabel:       "TIME ATTACK",
     roundsDone:            (n) => `${n} rounds`,
     globalTimer:           "TIME LEFT",
     // Photo Compare
-    photoCompare:          "ðŸ–¼ PHOTO COMPARE",
-    photoCompareSub:       "which image is in â€¦?",
+    photoCompare:          "🖼 PHOTO COMPARE",
+    photoCompareSub:       "which image is in …?",
     photoCompareQ:         (cont) => `Which image is in ${cont}?`,
-    leftBtn:               "â—€ LEFT",
-    rightBtn:              "RIGHT â–¶",
+    leftBtn:               "◀ LEFT",
+    rightBtn:              "RIGHT ▶",
     // Friends
-    friendsLB:             "ðŸ‘¥ FRIENDS",
+    friendsLB:             "👥 FRIENDS",
     friendsTitle:          "FRIENDS LEADERBOARD",
     createGroup:           "CREATE GROUP",
     joinGroup:             "JOIN GROUP",
@@ -180,29 +180,29 @@ const T = {
     groupJoined:           (n) => `Joined! ${n} members in group.`,
     groupNotFound:         "Group not found.",
     members:               "Members",
-    inviteText:            (code) => `Join my GeoWatch friends group! Code: ${code} â†’ geowatchgame.vercel.app`,
-    copyCode:              "ðŸ“‹ COPY INVITE",
+    inviteText:            (code) => `Join my GeoWatch friends group! Code: ${code} → geowatchgame.vercel.app`,
+    copyCode:              "📋 COPY INVITE",
   },
   de: {
     initializing:          "INITIALISIERUNG...",
-    supabaseError:         "âš  Supabase nicht verbunden",
+    supabaseError:         "⚠ Supabase nicht verbunden",
     supabaseErrorDesc:     "Verbinde Supabase in Lovable (oben rechts) und lade die Seite neu.",
-    step1:                 "Schritt 1 â€” Kostenlosen Windy API-Key holen",
-    step2:                 "Schritt 2 â€” API-Key eintragen",
-    errorLabel:            "âš  Fehler",
-    loadCameras:           "â–¶ KAMERAS LADEN",
-    useCache:              (n) => `â† CACHE NUTZEN (${n} Kameras)`,
+    step1:                 "Schritt 1 — Kostenlosen Windy API-Key holen",
+    step2:                 "Schritt 2 — API-Key eintragen",
+    errorLabel:            "⚠ Fehler",
+    loadCameras:           "▶ KAMERAS LADEN",
+    useCache:              (n) => `← CACHE NUTZEN (${n} Kameras)`,
     loadingCameras:        "KAMERAS WERDEN GELADEN...",
-    leaderboard:           "â—ˆ RANGLISTE",
+    leaderboard:           "◈ RANGLISTE",
     leaderboardTitle:      "RANGLISTE",
-    tagline:               "Live-Kameras weltweit Â· Erkenne die Stadt Â· 3 Optionen Â· Schnelligkeit zÃ¤hlt",
-    camerasLoaded:         (n) => `ðŸ“¡ ${n} Kameras geladen`,
+    tagline:               "Live-Kameras weltweit · Erkenne die Stadt · 3 Optionen · Schnelligkeit zählt",
+    camerasLoaded:         (n) => `📡 ${n} Kameras geladen`,
     scoring:               "Punktesystem",
-    basePoints:            "Basispunkte fÃ¼r jede richtige Antwort",
-    speedBonus:            "Schnelligkeitsbonus â€” je schneller, desto mehr",
+    basePoints:            "Basispunkte für jede richtige Antwort",
+    speedBonus:            "Schnelligkeitsbonus — je schneller, desto mehr",
     maxPoints:             "Maximalpunkte bei sofortiger richtiger Antwort",
     zeroPoints:            "Punkte bei falscher Antwort oder Zeitablauf",
-    selectRounds:          "Rundenanzahl wÃ¤hlen",
+    selectRounds:          "Rundenanzahl wählen",
     fiveRounds:            "5 RUNDEN",
     tenRounds:             "10 RUNDEN",
     fifteenRounds:         "15 RUNDEN",
@@ -212,86 +212,86 @@ const T = {
     max15k:                "max. 15.000 Pkt.",
     max20k:                "max. 20.000 Pkt.",
     region:                "Region",
-    regionAll:             "ðŸŒ Alle",
-    regionEurope:          "ðŸŒ Europa",
-    regionAmericas:        "ðŸŒŽ Amerika",
-    regionAsia:            "ðŸŒ Asien",
-    regionAfrica:          "ðŸŒ Afrika",
-    regionOceania:         "ðŸŒ Ozeanien",
-    regionMiddleEast:      "ðŸŒ Naher Osten",
-    regionTooFew:          "Zu wenige Kameras in dieser Region â€” spiele mit allen Kameras.",
+    regionAll:             "🌍 Alle",
+    regionEurope:          "🌍 Europa",
+    regionAmericas:        "🌎 Amerika",
+    regionAsia:            "🌏 Asien",
+    regionAfrica:          "🌍 Afrika",
+    regionOceania:         "🌏 Ozeanien",
+    regionMiddleEast:      "🌍 Naher Osten",
+    regionTooFew:          "Zu wenige Kameras in dieser Region — spiele mit allen Kameras.",
     zoomModeLabel:         "ZOOM-MODUS",
-    zoomHint:              "ðŸ” ZOOM",
+    zoomHint:              "🔍 ZOOM",
     operativeId:           "BENUTZER ID",
     usernamePlaceholder:   "Dein Benutzername...",
-    startMission:          (n) => `â–¶ MISSION STARTEN (${n} Runden)`,
+    startMission:          (n) => `▶ MISSION STARTEN (${n} Runden)`,
     duels:                 "Duelle",
-    createDuel:            "âš” ERSTELLEN",
-    joinDuelBtn:           "â†— BEITRETEN",
-    reloadCameras:         "âš™ API-KEY / CAMS NEU LADEN",
-    back:                  "â† ZURÃœCK",
+    createDuel:            "⚔ ERSTELLEN",
+    joinDuelBtn:           "↗ BEITRETEN",
+    reloadCameras:         "⚙ API-KEY / CAMS NEU LADEN",
+    back:                  "← ZURÜCK",
     joinDuelTitle:         "Duell beitreten",
     yourName:              "Dein Name",
     duelCode:              "Duell-Code",
-    accept:                "âš” ANNEHMEN",
+    accept:                "⚔ ANNEHMEN",
     codeNotFound:          "Code nicht gefunden.",
     duelEnded:             "Duell bereits beendet.",
     challengerPlaying:     "Herausforderer spielt noch.",
-    duelBadge:             "âš” DUELL",
+    duelBadge:             "⚔ DUELL",
     roundLabel:            "RUNDE",
     scoreLabel:            "PUNKTE",
-    streakLabel:           (n) => `ðŸ”¥ ${n}x SERIE`,
+    streakLabel:           (n) => `🔥 ${n}x SERIE`,
     newRecord:             "NEUER SERIEN-REKORD!",
-    noImage:               "KEIN BILD VERFÃœGBAR",
+    noImage:               "KEIN BILD VERFÜGBAR",
     whereIsCamera:         "WO BEFINDET SICH DIESE KAMERA?",
-    hintContinent:         "ðŸ’¡ KONTINENT  âˆ’150 Pkt.",
-    hintClimate:           "ðŸŒ¡ï¸ KLIMA  âˆ’200 Pkt.",
+    hintContinent:         "💡 KONTINENT  −150 Pkt.",
+    hintClimate:           "🌡️ KLIMA  −200 Pkt.",
     hintContinentLabel:    "KONTINENT",
     hintClimateLabel:      "KLIMA",
     hintLoading:           "Tipp wird geladen...",
-    locationRevealed:      "STANDORT ENTHÃœLLT",
+    locationRevealed:      "STANDORT ENTHÜLLT",
     pointsEarned:          (n) => `+${n} Punkte`,
     streakBonus:           (n) => `+${n} Serienbonus`,
-    hintPenalty:           (n) => `âˆ’${n} Tipp-Abzug`,
+    hintPenalty:           (n) => `−${n} Tipp-Abzug`,
     noPoints:              "Keine Punkte",
     loadingFunFact:        "FUN FACT WIRD GELADEN...",
     funFactError:          "FUN FACT FEHLER",
-    funFact:               "â—ˆ FUN FACT",
-    nextRound:             "NÃ„CHSTE RUNDE â†’",
-    results:               "ERGEBNIS â†’",
-    missionComplete:       (n) => `MISSION ABGESCHLOSSEN Â· ${n} RUNDEN`,
-    pointsMax:             (n) => `PUNKTE Â· MAX. ${n}`,
-    roundSummary:          "Runden-Ãœbersicht",
+    funFact:               "◈ FUN FACT",
+    nextRound:             "NÄCHSTE RUNDE →",
+    results:               "ERGEBNIS →",
+    missionComplete:       (n) => `MISSION ABGESCHLOSSEN · ${n} RUNDEN`,
+    pointsMax:             (n) => `PUNKTE · MAX. ${n}`,
+    roundSummary:          "Runden-Übersicht",
     roundN:                (n) => `Runde ${n}`,
-    playAgain:             "â–¶ NOCHMAL",
-    mainMenu:              "â† HAUPTMENÃœ",
+    playAgain:             "▶ NOCHMAL",
+    mainMenu:              "← HAUPTMENÜ",
     loading:               "Lade...",
-    noEntries:             "Noch keine EintrÃ¤ge.",
-    play:                  "â–¶ SPIELEN",
+    noEntries:             "Noch keine Einträge.",
+    play:                  "▶ SPIELEN",
     badgeRanking:          "Abzeichen-Rangfolge",
     perfectRounds:         "perfekte Runden",
     yourScore:             "DEIN ERGEBNIS",
-    codeForOpponent:       "CODE FÃœR DEINEN GEGNER",
-    opponentInstruction:   `Gegner â†’ "Duell beitreten" â†’ Code eingeben`,
+    codeForOpponent:       "CODE FÜR DEINEN GEGNER",
+    opponentInstruction:   `Gegner → "Duell beitreten" → Code eingeben`,
     result:                "ERGEBNIS",
     you:                   (name) => `DU (${name})`,
-    winner:                "GEWINNER â—ˆ",
-    playSolo:              "â–¶ SOLO SPIELEN",
-    menu:                  "â† MENÃœ",
-    tooFewCameras:         "Zu wenige aktive Kameras. Bitte 1â€“2 Min. warten und nochmal versuchen (neue API-Keys brauchen etwas Zeit).",
+    winner:                "GEWINNER ◈",
+    playSolo:              "▶ SOLO SPIELEN",
+    menu:                  "← MENÜ",
+    tooFewCameras:         "Zu wenige aktive Kameras. Bitte 1–2 Min. warten und nochmal versuchen (neue API-Keys brauchen etwas Zeit).",
     unknownError:          "Unbekannter Fehler",
     emptyResponse:         "Leere Antwort von API",
     usernameRequired:      "Bitte einen Benutzernamen eingeben",
-    backToMenu:            "â† ZUM MENÃœ",
-    dailyChallenge:        "TÃ„GLICHE CHALLENGE",
+    backToMenu:            "← ZUM MENÜ",
+    dailyChallenge:        "TÄGLICHE CHALLENGE",
     dailySubtitle:         (n) => `${n} Spieler heute`,
     alreadyPlayed:         "Heute bereits gespielt",
-    startDailyBtn:         "â–¶ CHALLENGE STARTEN",
-    dailyComplete:         "TÃ„GLICHE CHALLENGE ABGESCHLOSSEN",
+    startDailyBtn:         "▶ CHALLENGE STARTEN",
+    dailyComplete:         "TÄGLICHE CHALLENGE ABGESCHLOSSEN",
     dailyRank:             (rank, total) => `Platz ${rank} von ${total} Spielern heute`,
-    nextChallenge:         (cd) => `NÃ¤chste Challenge in ${cd}`,
+    nextChallenge:         (cd) => `Nächste Challenge in ${cd}`,
     todayTop:              "HEUTIGE TOP 10",
-    shareResult:           "ðŸ“¤ ERGEBNIS TEILEN",
+    shareResult:           "📤 ERGEBNIS TEILEN",
     stats:                 "STATISTIKEN",
     statsTitle:            "STATISTIKEN",
     gamesPlayed:           "Gespielte Runden",
@@ -301,23 +301,23 @@ const T = {
     bestStreak:            "Bester Streak",
     byContinent:           "Trefferquote nach Kontinent",
     recentGames:           "Letzte Spiele",
-    resetStats:            "â†º Stats zurÃ¼cksetzen",
-    noStats:               "Noch keine Statistiken â€” spiel ein paar Runden!",
+    resetStats:            "↺ Stats zurücksetzen",
+    noStats:               "Noch keine Statistiken — spiel ein paar Runden!",
     correct:               "richtig",
     // Time Attack
-    timeAttack:            "â± ZEITANGRIFF",
+    timeAttack:            "⏱ ZEITANGRIFF",
     timeAttackSub:         "max. Runden in 3 Min",
     timeAttackLabel:       "ZEITANGRIFF",
     roundsDone:            (n) => `${n} Runden`,
-    globalTimer:           "ZEIT ÃœBRIG",
+    globalTimer:           "ZEIT ÜBRIG",
     // Photo Compare
-    photoCompare:          "ðŸ–¼ BILDVERGLEICH",
-    photoCompareSub:       "welches Bild liegt in â€¦?",
+    photoCompare:          "🖼 BILDVERGLEICH",
+    photoCompareSub:       "welches Bild liegt in …?",
     photoCompareQ:         (cont) => `Welches Bild liegt in ${cont}?`,
-    leftBtn:               "â—€ LINKS",
-    rightBtn:              "RECHTS â–¶",
+    leftBtn:               "◀ LINKS",
+    rightBtn:              "RECHTS ▶",
     // Friends
-    friendsLB:             "ðŸ‘¥ FREUNDE",
+    friendsLB:             "👥 FREUNDE",
     friendsTitle:          "FREUNDE RANGLISTE",
     createGroup:           "GRUPPE ERSTELLEN",
     joinGroup:             "GRUPPE BEITRETEN",
@@ -326,46 +326,46 @@ const T = {
     groupJoined:           (n) => `Beigetreten! ${n} Mitglieder in der Gruppe.`,
     groupNotFound:         "Gruppe nicht gefunden.",
     members:               "Mitglieder",
-    inviteText:            (code) => `Tritt meiner GeoWatch-Freundesgruppe bei! Code: ${code} â†’ geowatchgame.vercel.app`,
-    copyCode:              "ðŸ“‹ CODE KOPIEREN",
+    inviteText:            (code) => `Tritt meiner GeoWatch-Freundesgruppe bei! Code: ${code} → geowatchgame.vercel.app`,
+    copyCode:              "📋 CODE KOPIEREN",
   },
 };
 
-// â”€â”€ FAQ DATA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── FAQ DATA ──────────────────────────────────────────────────────────────────
 const FAQ_DATA = {
   en: [
     { q: "How does GeoWatch work?",          a: "GeoWatch shows you real webcam snapshots from around the world. Choose the correct city from 3 options. The faster you answer, the more points you earn. Each correct answer gives you 500 base points plus up to 500 speed bonus points." },
-    { q: "What is the Daily Challenge?",      a: "Every day at midnight (UTC), a new set of 5 cameras is generated â€” the same for all players worldwide. You can only play the Daily Challenge once per day. Your score is saved on the Daily Leaderboard where you can see your rank among all players who played that day. Come back tomorrow for a new challenge!" },
-    { q: "Can I play the Daily Challenge more than once?", a: "No â€” the Daily Challenge can only be played once per day per device. After completing it, you can see your score, your rank, and the top 10 players of the day. A countdown shows you how long until the next challenge begins." },
-    { q: "What is the Streak Bonus?",         a: "Answer multiple questions correctly in a row to earn a streak bonus: 2Ã— streak = +50 pts, 3Ã— = +100 pts, 4Ã— = +150 pts, 5Ã— or more = +200 pts per round." },
+    { q: "What is the Daily Challenge?",      a: "Every day at midnight (UTC), a new set of 5 cameras is generated — the same for all players worldwide. You can only play the Daily Challenge once per day. Your score is saved on the Daily Leaderboard where you can see your rank among all players who played that day. Come back tomorrow for a new challenge!" },
+    { q: "Can I play the Daily Challenge more than once?", a: "No — the Daily Challenge can only be played once per day per device. After completing it, you can see your score, your rank, and the top 10 players of the day. A countdown shows you how long until the next challenge begins." },
+    { q: "What is the Streak Bonus?",         a: "Answer multiple questions correctly in a row to earn a streak bonus: 2× streak = +50 pts, 3× = +100 pts, 4× = +150 pts, 5× or more = +200 pts per round." },
     { q: "What is Zoom Mode?",                a: "Activate Zoom Mode on the home screen to make the game harder. The image starts zoomed in and gradually zooms out. Answer early for maximum points!" },
-    { q: "How do hints work?",                a: "You can buy two hints per round: Continent hint (âˆ’150 pts) reveals which continent the camera is in. Climate hint (âˆ’200 pts) describes the typical climate of the location without revealing the name." },
-    { q: "What are the badges?",              a: "Earn a badge for every perfect round (all answers correct). ðŸ… 1â€“9 perfect rounds Â· â­ 10â€“19 Â· ðŸ’Ž 20â€“49 Â· ðŸ‘‘ 50+ perfect rounds. Badges appear next to your name on the leaderboard." },
+    { q: "How do hints work?",                a: "You can buy two hints per round: Continent hint (−150 pts) reveals which continent the camera is in. Climate hint (−200 pts) describes the typical climate of the location without revealing the name." },
+    { q: "What are the badges?",              a: "Earn a badge for every perfect round (all answers correct). 🏅 1–9 perfect rounds · ⭐ 10–19 · 💎 20–49 · 👑 50+ perfect rounds. Badges appear next to your name on the leaderboard." },
     { q: "How do Duels work?",                a: "Create a duel on the home screen to get a 6-digit code. Share the code with a friend. They enter it under \"Join Duel\" and play the exact same camera sequence. The higher score wins!" },
     { q: "What does the Region filter do?",   a: "Choose a region (Europe, Americas, Asia, Africa, Oceania, Middle East) to only see cameras from that part of the world." },
     { q: "How is the Leaderboard calculated?",a: "The leaderboard shows all-time high scores from all players worldwide. Only your best game per session is saved. Badges are shown next to names." },
     { q: "Where do the camera images come from?", a: "GeoWatch uses the Windy Webcams API with over 40,000 real webcams worldwide. Images are daylight snapshots updated regularly." },
   ],
   de: [
-    { q: "Wie funktioniert GeoWatch?",        a: "GeoWatch zeigt dir echte Webcam-Aufnahmen aus aller Welt. WÃ¤hle die richtige Stadt aus 3 Optionen. Je schneller du antwortest, desto mehr Punkte bekommst du. Jede richtige Antwort gibt 500 Basispunkte plus bis zu 500 Schnelligkeitsbonus." },
-    { q: "Was ist die TÃ¤gliche Challenge?",    a: "Jeden Tag um Mitternacht (UTC) werden 5 neue Kameras generiert â€” dieselben fÃ¼r alle Spieler weltweit. Die TÃ¤gliche Challenge kann nur einmal pro Tag gespielt werden. Dein Ergebnis wird in der Tages-Rangliste gespeichert, wo du deinen Platz unter allen heutigen Spielern siehst. Morgen gibt es eine neue Challenge!" },
-    { q: "Kann ich die TÃ¤gliche Challenge mehrmals spielen?", a: "Nein â€” die TÃ¤gliche Challenge kann pro Tag und GerÃ¤t nur einmal gespielt werden. Nach dem Spielen siehst du deinen Score, deinen Platz und die Top 10 des Tages. Ein Countdown zeigt dir wie lange es bis zur nÃ¤chsten Challenge dauert." },
-    { q: "Was ist der Serien-Bonus?",          a: "Beantworte mehrere Fragen hintereinander richtig fÃ¼r einen Serienbonus: 2Ã— Serie = +50 Pkt, 3Ã— = +100 Pkt, 4Ã— = +150 Pkt, 5Ã— oder mehr = +200 Pkt pro Runde." },
-    { q: "Was ist der Zoom-Modus?",            a: "Aktiviere den Zoom-Modus auf der Startseite fÃ¼r mehr Schwierigkeit. Das Bild startet stark gezoomt und zoomt langsam heraus. FrÃ¼h antworten = mehr Punkte!" },
-    { q: "Wie funktionieren Tipps?",           a: "Du kannst zwei Tipps pro Runde kaufen: Kontinent-Tipp (âˆ’150 Pkt) verrÃ¤t den Kontinent der Kamera. Klima-Tipp (âˆ’200 Pkt) beschreibt das typische Klima ohne den Ortsnamen zu nennen." },
-    { q: "Was sind Abzeichen?",                a: "Verdiene ein Abzeichen fÃ¼r jede perfekte Runde (alle Antworten richtig). ðŸ… 1â€“9 perfekte Runden Â· â­ 10â€“19 Â· ðŸ’Ž 20â€“49 Â· ðŸ‘‘ 50+ perfekte Runden. Abzeichen erscheinen neben deinem Namen in der Rangliste." },
-    { q: "Wie funktionieren Duelle?",          a: "Erstelle ein Duell auf der Startseite und erhalte einen 6-stelligen Code. Teile den Code mit einem Freund. Er gibt ihn unter \"Duell beitreten\" ein und spielt dieselbe Kamera-Sequenz. Die hÃ¶here Punktzahl gewinnt!" },
-    { q: "Was macht der Regionen-Filter?",     a: "WÃ¤hle eine Region (Europa, Amerika, Asien, Afrika, Ozeanien, Naher Osten) um nur Kameras aus diesem Teil der Welt zu sehen." },
+    { q: "Wie funktioniert GeoWatch?",        a: "GeoWatch zeigt dir echte Webcam-Aufnahmen aus aller Welt. Wähle die richtige Stadt aus 3 Optionen. Je schneller du antwortest, desto mehr Punkte bekommst du. Jede richtige Antwort gibt 500 Basispunkte plus bis zu 500 Schnelligkeitsbonus." },
+    { q: "Was ist die Tägliche Challenge?",    a: "Jeden Tag um Mitternacht (UTC) werden 5 neue Kameras generiert — dieselben für alle Spieler weltweit. Die Tägliche Challenge kann nur einmal pro Tag gespielt werden. Dein Ergebnis wird in der Tages-Rangliste gespeichert, wo du deinen Platz unter allen heutigen Spielern siehst. Morgen gibt es eine neue Challenge!" },
+    { q: "Kann ich die Tägliche Challenge mehrmals spielen?", a: "Nein — die Tägliche Challenge kann pro Tag und Gerät nur einmal gespielt werden. Nach dem Spielen siehst du deinen Score, deinen Platz und die Top 10 des Tages. Ein Countdown zeigt dir wie lange es bis zur nächsten Challenge dauert." },
+    { q: "Was ist der Serien-Bonus?",          a: "Beantworte mehrere Fragen hintereinander richtig für einen Serienbonus: 2× Serie = +50 Pkt, 3× = +100 Pkt, 4× = +150 Pkt, 5× oder mehr = +200 Pkt pro Runde." },
+    { q: "Was ist der Zoom-Modus?",            a: "Aktiviere den Zoom-Modus auf der Startseite für mehr Schwierigkeit. Das Bild startet stark gezoomt und zoomt langsam heraus. Früh antworten = mehr Punkte!" },
+    { q: "Wie funktionieren Tipps?",           a: "Du kannst zwei Tipps pro Runde kaufen: Kontinent-Tipp (−150 Pkt) verrät den Kontinent der Kamera. Klima-Tipp (−200 Pkt) beschreibt das typische Klima ohne den Ortsnamen zu nennen." },
+    { q: "Was sind Abzeichen?",                a: "Verdiene ein Abzeichen für jede perfekte Runde (alle Antworten richtig). 🏅 1–9 perfekte Runden · ⭐ 10–19 · 💎 20–49 · 👑 50+ perfekte Runden. Abzeichen erscheinen neben deinem Namen in der Rangliste." },
+    { q: "Wie funktionieren Duelle?",          a: "Erstelle ein Duell auf der Startseite und erhalte einen 6-stelligen Code. Teile den Code mit einem Freund. Er gibt ihn unter \"Duell beitreten\" ein und spielt dieselbe Kamera-Sequenz. Die höhere Punktzahl gewinnt!" },
+    { q: "Was macht der Regionen-Filter?",     a: "Wähle eine Region (Europa, Amerika, Asien, Afrika, Ozeanien, Naher Osten) um nur Kameras aus diesem Teil der Welt zu sehen." },
     { q: "Wie wird die Rangliste berechnet?",  a: "Die Rangliste zeigt alle Highscores aller Spieler weltweit. Abzeichen werden neben den Namen angezeigt." },
-    { q: "Woher kommen die Kamerabilder?",     a: "GeoWatch nutzt die Windy Webcams API mit Ã¼ber 40.000 echten Webcams weltweit. Die Bilder sind Tageslicht-Aufnahmen die regelmÃ¤ÃŸig aktualisiert werden." },
+    { q: "Woher kommen die Kamerabilder?",     a: "GeoWatch nutzt die Windy Webcams API mit über 40.000 echten Webcams weltweit. Die Bilder sind Tageslicht-Aufnahmen die regelmäßig aktualisiert werden." },
   ],
 };
 
-// â”€â”€ UTILS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── UTILS ─────────────────────────────────────────────────────────────────────
 const flag = (code) => {
-  if (!code || code.length < 2) return "ðŸŒ";
+  if (!code || code.length < 2) return "🌍";
   try { return String.fromCodePoint(0x1F1E6 + code.toUpperCase().charCodeAt(0) - 65, 0x1F1E6 + code.toUpperCase().charCodeAt(1) - 65); }
-  catch { return "ðŸŒ"; }
+  catch { return "🌍"; }
 };
 const shuffle       = (a) => [...a].sort(() => Math.random() - 0.5);
 const genCode       = () => Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -397,7 +397,7 @@ const getOptions = (correct, pool) => {
       if (distractors.length === 2) break;
     }
   }
-  // Fallback: falls nicht genug verschiedene LÃ¤nder vorhanden
+  // Fallback: falls nicht genug verschiedene Länder vorhanden
   if (distractors.length < 2) {
     const used = new Set(distractors.map(c => c.city));
     for (const cam of shuffle(pool.filter(c => c.city !== correct.city))) {
@@ -449,13 +449,13 @@ const getDailySequence = (pool) => {
   return idx.slice(0, 5);
 };
 
-// â”€â”€ LOCAL STORAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── LOCAL STORAGE ─────────────────────────────────────────────────────────────
 const ls = {
   get: (k)    => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
   set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
 };
 
-// â”€â”€ SUPABASE DB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── SUPABASE DB ───────────────────────────────────────────────────────────────
 const db = {
   async loadLB() {
     if (!supabase) return { five: [], ten: [], fifteen: [], twenty: [] };
@@ -534,7 +534,7 @@ const db = {
   },
 };
 
-// â”€â”€ STATS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── STATS ─────────────────────────────────────────────────────────────────────
 const STATS_KEY     = "geowatch:stats";
 const PLAYDATES_KEY = "geowatch:playdates";
 const emptyStats = () => ({ gamesPlayed:0, totalScore:0, correctAnswers:0, totalAnswers:0, bestScore:0, bestStreak:0, continentStats:{}, recentGames:[] });
@@ -585,14 +585,14 @@ const saveStats = (roundScores, sequence, pool, maxStreak) => {
   recordPlayDate();
 };
 
-// â”€â”€ FUN FACT (Gemini + Supabase cache) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── FUN FACT (Gemini + Supabase cache) ───────────────────────────────────────
 const fetchFunFact = async (city, country, lang = "en") => {
   const cached = await db.getFunFact(city, lang);
   if (cached) return cached;
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   if (!apiKey) return null;
   const prompt = lang === "de"
-    ? `Antworte auf Deutsch. Gib mir einen kurzen, interessanten Fun Fact (2-3 SÃ¤tze) Ã¼ber die Stadt ${city} in ${country}, oder falls du keine gesicherten Infos hast, Ã¼ber ${country} allgemein. Antworte NUR mit einem JSON-Objekt ohne Markdown-Backticks: {"fact":"text","source":"Quellenname","url":"https://..."}`
+    ? `Antworte auf Deutsch. Gib mir einen kurzen, interessanten Fun Fact (2-3 Sätze) über die Stadt ${city} in ${country}, oder falls du keine gesicherten Infos hast, über ${country} allgemein. Antworte NUR mit einem JSON-Objekt ohne Markdown-Backticks: {"fact":"text","source":"Quellenname","url":"https://..."}`
     : `Respond in English. Give me a short, interesting fun fact (2-3 sentences) about the city ${city} in ${country}, or if you have no verified info, about ${country} in general. Reply ONLY with a JSON object, no markdown backticks: {"fact":"text","source":"source name","url":"https://..."}`;
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -620,7 +620,7 @@ const fetchFunFact = async (city, country, lang = "en") => {
   }
 };
 
-// â”€â”€ SHARE CARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── SHARE CARD ────────────────────────────────────────────────────────────────
 const rrect = (ctx, x, y, w, h, r) => {
   ctx.beginPath();
   ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
@@ -708,7 +708,7 @@ const generateShareCard = (totalScore, roundScores, maxStreak, gameRounds, lang)
     rrect(ctx, x, y, box, box, 10); ctx.stroke();
     ctx.font = "bold 42px monospace";
     ctx.fillStyle = ok ? "#00ffb3" : "#ff4455";
-    ctx.fillText(ok ? "âœ“" : "âœ—", x + box / 2, y + box / 2 + 15);
+    ctx.fillText(ok ? "✓" : "✗", x + box / 2, y + box / 2 + 15);
   }
 
   const afterGrid = gy + rows * (box + gap) + 24;
@@ -717,14 +717,14 @@ const generateShareCard = (totalScore, roundScores, maxStreak, gameRounds, lang)
   if (maxStreak >= 2) {
     ctx.font = "700 32px 'Courier New', Courier, monospace";
     ctx.fillStyle = "#ffaa00";
-    ctx.fillText(`ðŸ”¥ ${maxStreak}Ã— STREAK MAX`, 540, afterGrid + 44);
+    ctx.fillText(`🔥 ${maxStreak}× STREAK MAX`, 540, afterGrid + 44);
   }
 
   // Date / rounds info
   ctx.font = "400 23px 'Courier New', Courier, monospace";
   ctx.fillStyle = "#3a4a5a";
   const dateStr = new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-GB");
-  ctx.fillText(`${gameRounds} ${lang === "de" ? "Runden" : "Rounds"} Â· ${dateStr}`, 540, maxStreak >= 2 ? afterGrid + 94 : afterGrid + 44);
+  ctx.fillText(`${gameRounds} ${lang === "de" ? "Runden" : "Rounds"} · ${dateStr}`, 540, maxStreak >= 2 ? afterGrid + 94 : afterGrid + 44);
 
   // Bottom divider + URL
   ctx.strokeStyle = "rgba(0,255,179,0.1)"; ctx.lineWidth = 1;
@@ -736,7 +736,7 @@ const generateShareCard = (totalScore, roundScores, maxStreak, gameRounds, lang)
   return c;
 };
 
-// â”€â”€ WINDY API via Edge Function â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── WINDY API via Edge Function ───────────────────────────────────────────────
 const EDGE_URL = "https://muaquiygkhdqvkkglgau.supabase.co/functions/v1/windy-proxy";
 const ENV_WINDY_KEY = import.meta.env.VITE_WINDY_API_KEY || null;
 
@@ -764,7 +764,7 @@ const mapCam = (w) => ({
   imageUrl:    w.images?.day?.preview || w.images?.daylight?.preview || w.images?.current?.preview || null,
 });
 
-const LOCATION_TEXT_PATTERNS = /strada|street|rue\s|via\s|str\.|calle\s|foto-webcam\.eu|feratel|\d{1,3}\.\d+[Â°,]\s*\d|nz\s*transport|transport\s*agency|nzta|cctv|æ–°é—»|waka\s*kotahi/i;
+const LOCATION_TEXT_PATTERNS = /strada|street|rue\s|via\s|str\.|calle\s|foto-webcam\.eu|feratel|\d{1,3}\.\d+[°,]\s*\d|nz\s*transport|transport\s*agency|nzta|cctv|新闻|waka\s*kotahi/i;
 const STALE_MS = 30 * 24 * 60 * 60 * 1000;
 
 const fetchBatch = async (apiKey, offset) => {
@@ -806,7 +806,7 @@ const refreshImageUrl = async (apiKey, camId) => {
 
 const randOrigin = () => `${20 + Math.floor(Math.random() * 60)}% ${20 + Math.floor(Math.random() * 60)}%`;
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════════════════════════════
 export default function GeoWatch() {
   const [screen,        setScreen]       = useState("boot");
   const [lang,          setLang]         = useState("en");
@@ -846,29 +846,29 @@ export default function GeoWatch() {
   const [dailyLB,       setDailyLB]      = useState([]);
   const [dailyCount,    setDailyCount]   = useState(0);
   const [countdown,     setCountdown]    = useState("");
-  // â”€â”€ Feature 1: region filter
+  // ── Feature 1: region filter
   const [region,        setRegion]       = useState("all");
   const [regionWarning, setRegionWarning] = useState("");
-  // â”€â”€ Feature 2: streak
+  // ── Feature 2: streak
   const [streak,        setStreak]       = useState(0);
   const [maxStreak,     setMaxStreak]    = useState(0);
   const [newRecord,     setNewRecord]    = useState(false);
-  // â”€â”€ Feature 3: zoom mode
+  // ── Feature 3: zoom mode
   const [zoomMode,      setZoomMode]     = useState(false);
   const [zoomOrigin,    setZoomOrigin]   = useState("50% 50%");
-  // â”€â”€ Feature 4: hints
+  // ── Feature 4: hints
   const [hintContUsed,  setHintContUsed] = useState(false);
   const [hintClimUsed,  setHintClimUsed] = useState(false);
   const [hintClimText,  setHintClimText] = useState("");
   const [hintClimLoad,  setHintClimLoad] = useState(false);
   const [hintPenalty,   setHintPenalty]  = useState(0);
   const timerRef   = useRef(null);
-  // â”€â”€ Time Attack
+  // ── Time Attack
   const [isTimeAttack,  setIsTimeAttack] = useState(false);
   const [taLeft,        setTaLeft]       = useState(180);
   const [taRounds,      setTaRounds]     = useState(0);
   const taTimerRef = useRef(null);
-  // â”€â”€ Photo Compare
+  // ── Photo Compare
   const [isPhotoCompare, setIsPhotoCompare] = useState(false);
   const [compareLeft,    setCompareLeft]    = useState(null);
   const [compareRight,   setCompareRight]   = useState(null);
@@ -878,13 +878,13 @@ export default function GeoWatch() {
   const [compareScores,  setCompareScores]  = useState([]);
   const [compareRound,   setCompareRound]   = useState(0);
   const COMPARE_ROUNDS = 5;
-  // â”€â”€ Friends Leaderboard
+  // ── Friends Leaderboard
   const [friendGroup,    setFriendGroup]   = useState(() => ls.get("geowatch:friendgroup") || null);
   const [friendJoinInput,setFriendJoinInput]= useState("");
   const [friendError,    setFriendError]   = useState("");
   const [friendsLBData,  setFriendsLBData] = useState({ five:[], ten:[], fifteen:[], twenty:[], ta:[] });
   const [friendsLBLoad,  setFriendsLBLoad] = useState(false);
-  // â”€â”€ Time Attack Leaderboard
+  // ── Time Attack Leaderboard
   const [taLBData,       setTaLBData]      = useState([]);
 
   const t          = T[lang];
@@ -892,7 +892,7 @@ export default function GeoWatch() {
   const totalScore = roundScores.reduce((a, b) => a + b, 0);
   const roundCount = Math.min(gameRounds, pool.length);
 
-  // â”€â”€ BOOT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── BOOT ────────────────────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       if (!supabase) { setScreen("setup"); return; }
@@ -923,7 +923,7 @@ export default function GeoWatch() {
     })();
   }, []);
 
-  // â”€â”€ TIME ATTACK GLOBAL TIMER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── TIME ATTACK GLOBAL TIMER ─────────────────────────────────────────────
   useEffect(() => {
     if (screen !== "game" || !isTimeAttack || selected !== null) return;
     if (taLeft <= 0) return;
@@ -936,7 +936,7 @@ export default function GeoWatch() {
     return () => clearInterval(taTimerRef.current);
   }, [screen, isTimeAttack, roundIdx, selected]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // â”€â”€ SHIFT+ALT+A â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── SHIFT+ALT+A ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (screen !== "home") return;
     const handler = (e) => { if (e.shiftKey && e.altKey && e.key === "A") setShowApiBtn(v => !v); };
@@ -944,14 +944,14 @@ export default function GeoWatch() {
     return () => window.removeEventListener("keydown", handler);
   }, [screen]);
 
-  // â”€â”€ NEW STREAK RECORD: auto-clear after 3s â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── NEW STREAK RECORD: auto-clear after 3s ────────────────────────────────
   useEffect(() => {
     if (!newRecord) return;
     const id = setTimeout(() => setNewRecord(false), 3000);
     return () => clearTimeout(id);
   }, [newRecord]);
 
-  // â”€â”€ UNUSABLE IMAGE: auto-skip after 2s â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── UNUSABLE IMAGE: auto-skip after 2s ───────────────────────────────────
   useEffect(() => {
     if (!imgUnusable) return;
     stopTimer();
@@ -959,7 +959,7 @@ export default function GeoWatch() {
     return () => clearTimeout(id);
   }, [imgUnusable]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // â”€â”€ COUNTDOWN bis Mitternacht UTC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── COUNTDOWN bis Mitternacht UTC ────────────────────────────────────────
   useEffect(() => {
     const calc = () => {
       const now = new Date();
@@ -974,14 +974,14 @@ export default function GeoWatch() {
     return () => clearInterval(id);
   }, []);
 
-  // â”€â”€ DAILY PLAYER COUNT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── DAILY PLAYER COUNT ────────────────────────────────────────────────────
   useEffect(() => {
     if (screen !== "home") return;
     const today = new Date().toISOString().slice(0, 10);
     db.loadDailyLB(today).then(lb => setDailyCount(lb.length));
   }, [screen]);
 
-  // â”€â”€ CAM-BILD laden/refreshen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── CAM-BILD laden/refreshen ─────────────────────────────────────────────
   useEffect(() => {
     if (!currentCam) return;
     setImgLoading(true);
@@ -1006,7 +1006,7 @@ export default function GeoWatch() {
     setImgLoading(false);
   }, [currentCam]);
 
-  // â”€â”€ AUTO-REFRESH snapshot every 30s â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── AUTO-REFRESH snapshot every 30s ──────────────────────────────────────
   useEffect(() => {
     if (screen !== "game" || !currentCam) return;
     const apiKey = ENV_WINDY_KEY || ls.get("geowatch:windykey");
@@ -1018,7 +1018,7 @@ export default function GeoWatch() {
     return () => clearInterval(id);
   }, [screen, currentCam?.id]);
 
-  // â”€â”€ Feature 4: climate hint via Claude â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Feature 4: climate hint via Claude ───────────────────────────────────
   const fetchClimateHint = useCallback(async () => {
     if (!currentCam || hintClimText) return;
     setHintClimLoad(true);
@@ -1037,7 +1037,7 @@ export default function GeoWatch() {
     setHintClimLoad(false);
   }, [currentCam, hintClimText]);
 
-  // â”€â”€ FETCH CAMS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── FETCH CAMS ───────────────────────────────────────────────────────────
   const fetchAndCache = useCallback(async (key) => {
     setScreen("loading"); setLoadProg([0, 15]); setApiError("");
     try {
@@ -1060,7 +1060,7 @@ export default function GeoWatch() {
     fetchAndCache(key);
   }, [apiInput, fetchAndCache]);
 
-  // â”€â”€ LEADERBOARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── LEADERBOARD ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (screen !== "leaderboard") return;
     setLbLoading(true);
@@ -1071,7 +1071,7 @@ export default function GeoWatch() {
     });
   }, [screen]);
 
-  // â”€â”€ TIMER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── TIMER ────────────────────────────────────────────────────────────────
   const stopTimer = useCallback(() => clearInterval(timerRef.current), []);
 
   useEffect(() => {
@@ -1082,7 +1082,7 @@ export default function GeoWatch() {
     return stopTimer;
   }, [screen, roundIdx, selected]);
 
-  // â”€â”€ TIME ATTACK â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── TIME ATTACK ──────────────────────────────────────────────────────────
   const endTimeAttack = useCallback(async () => {
     clearInterval(taTimerRef.current);
     const finalScore = roundScores.reduce((a, b) => a + b, 0);
@@ -1110,7 +1110,7 @@ export default function GeoWatch() {
     setScreen("game");
   }, [pool]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // â”€â”€ PHOTO COMPARE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── PHOTO COMPARE ────────────────────────────────────────────────────────
   const startPhotoCompare = useCallback(() => {
     if (pool.length < 10) return;
     const conts = ["EU","NA","SA","AS","AF","OC","ME"];
@@ -1158,7 +1158,7 @@ export default function GeoWatch() {
     setCompareScores(prev => [...prev, pts]);
   }, [compareSelected, compareCorrect]);
 
-  // â”€â”€ GAME START â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── GAME START ───────────────────────────────────────────────────────────
   const startGame = useCallback((seq = null, meta = null, p = null) => {
     const rawPool = p ?? pool;
     let ap = rawPool;
@@ -1197,7 +1197,7 @@ export default function GeoWatch() {
     setScreen("game");
   }, [pool]);
 
-  // â”€â”€ ANSWER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── ANSWER ───────────────────────────────────────────────────────────────
   const handleAnswer = useCallback((city) => {
     stopTimer();
     const isCorrect  = city === camLabel(currentCam);
@@ -1220,7 +1220,7 @@ export default function GeoWatch() {
     }
   }, [currentCam, timeLeft, stopTimer, streak, maxStreak, hintPenalty, lang]);
 
-  // â”€â”€ NEXT ROUND â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── NEXT ROUND ───────────────────────────────────────────────────────────
   const nextRound = useCallback(async () => {
     const isLast     = roundIdx + 1 >= roundCount;
     const finalScore = roundScores.reduce((a, b) => a + b, 0);
@@ -1268,7 +1268,7 @@ export default function GeoWatch() {
     }
   }, [roundIdx, roundCount, roundScores, isDailyChallenge, isDuel, duelMeta, username, duelCode, sequence, pool, lang, maxStreak, isTimeAttack]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // â”€â”€ DUEL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── DUEL ─────────────────────────────────────────────────────────────────
   const createDuel = useCallback(async () => {
     const code = genCode();
     const seq  = buildBalancedSeq(pool, rounds, "ALL");
@@ -1287,7 +1287,7 @@ export default function GeoWatch() {
     startGame(data.sequence, { ...data, code: joinInput.toUpperCase() });
   }, [joinInput, pool, startGame, lang]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // â”€â”€ SHARE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── SHARE ─────────────────────────────────────────────────────────────────
   const shareResult = useCallback(() => {
     const canvas = generateShareCard(totalScore, roundScores, maxStreak, gameRounds, lang);
     const shareText = lang === "de"
@@ -1314,7 +1314,7 @@ export default function GeoWatch() {
     }
   }, [totalScore, roundScores, maxStreak, gameRounds, lang]);
 
-  // â”€â”€ HINT HANDLERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── HINT HANDLERS ────────────────────────────────────────────────────────
   const useContHint = useCallback(() => {
     if (hintContUsed) return;
     setHintContUsed(true);
@@ -1328,7 +1328,7 @@ export default function GeoWatch() {
     fetchClimateHint();
   }, [hintClimUsed, fetchClimateHint]);
 
-  // â”€â”€ STYLES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── STYLES ────────────────────────────────────────────────────────────────
   const S = {
     app:     { minHeight:"100vh", background:"#07080d", color:"#c8d0d8", fontFamily:"'Inter',system-ui,sans-serif", fontSize:16, lineHeight:1.6, display:"flex", flexDirection:"column", alignItems:"center" },
     scan:    { position:"fixed", inset:0, background:"repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,180,0.012) 2px,rgba(0,255,180,0.012) 4px)", pointerEvents:"none", zIndex:9999 },
@@ -1341,21 +1341,21 @@ export default function GeoWatch() {
     btn:     (v="p") => ({ padding:"13px 24px", borderRadius:4, border:v==="p"?"none":"1px solid rgba(0,255,179,0.4)", background:v==="p"?"linear-gradient(135deg,#00ffb3,#00c8ff)":"transparent", color:v==="p"?"#07080d":"#00ffb3", fontFamily:"'Courier New',Courier,monospace", fontWeight:900, fontSize:14, letterSpacing:"0.15em", cursor:"pointer" }),
     div:     { height:1, background:"rgba(0,255,179,0.1)" },
     stitle:  { fontSize:13, letterSpacing:"0.15em", color:"#556677", textTransform:"uppercase" },
-    pill:    { display:"inline-block", padding:"4px 12px", borderRadius:20, background:"rgba(0,255,179,0.1)", border:"1px solid rgba(0,255,179,0.3)", fontSize:13, color:"#00ffb3", fontFamily:"'Courier New',Courier,monospace" },
+    pill:    { display:"inline-block", padding:"4px 12px", borderRadius:20, background:"rgba(0,255,179,0.1)", border:"1px solid rgba(0,255,179,0.3)", fontSize:14, color:"#00ffb3", fontFamily:"'Courier New',Courier,monospace" },
     g2:      { display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 },
     score:   { fontSize:38, fontWeight:900, color:"#00ffb3", textShadow:"0 0 30px rgba(0,255,179,0.5)", textAlign:"center", fontFamily:"'Courier New',Courier,monospace" },
     tbBar:   (p) => ({ height:4, background:`linear-gradient(90deg,${p>.5?"#00ffb3":p>.25?"#ffcc00":"#ff4455"} ${p*100}%,#1a1f2e ${p*100}%)`, borderRadius:2, transition:"background 0.3s" }),
     optBtn:  (st) => ({ padding:"15px 20px", borderRadius:4, border:`1px solid ${st==="c"?"#00ffb3":st==="w"?"#ff4455":"rgba(255,255,255,0.1)"}`, background:st==="c"?"rgba(0,255,179,0.15)":st==="w"?"rgba(255,68,85,0.15)":"rgba(255,255,255,0.03)", color:st==="c"?"#00ffb3":st==="w"?"#ff4455":"#c8d0d8", cursor:selected?"default":"pointer", fontSize:17, fontFamily:"'Inter',system-ui,sans-serif", fontWeight:600, textAlign:"left", transition:"all 0.15s" }),
     lbRow:   (i) => ({ display:"flex", alignItems:"center", gap:12, padding:"11px 16px", background:i===0?"rgba(0,255,179,0.08)":"rgba(255,255,255,0.02)", borderRadius:4, border:i===0?"1px solid rgba(0,255,179,0.3)":"1px solid rgba(255,255,255,0.05)" }),
     code:    { fontSize:34, fontWeight:900, letterSpacing:"0.4em", color:"#00ffb3", textShadow:"0 0 30px rgba(0,255,179,0.6)", textAlign:"center", padding:"18px 0", fontFamily:"'Courier New',Courier,monospace" },
-    infoBox: { background:"rgba(0,255,179,0.04)", border:"1px solid rgba(0,255,179,0.15)", borderRadius:4, padding:"16px 18px", fontSize:15, color:"#7788aa", lineHeight:2 },
+    infoBox: { background:"rgba(0,255,179,0.04)", border:"1px solid rgba(0,255,179,0.15)", borderRadius:4, padding:"16px 18px", fontSize:15, color:"#7788aa", lineHeight:1.9 },
     errBox:  { background:"rgba(255,68,85,0.08)", border:"1px solid rgba(255,68,85,0.3)", borderRadius:4, padding:"13px 16px", fontSize:15, color:"#ff8899", lineHeight:1.8 },
     warnBox: { background:"rgba(255,170,0,0.08)", border:"1px solid rgba(255,170,0,0.3)", borderRadius:4, padding:"11px 14px", fontSize:14, color:"#ffcc66" },
     rndBtn:  (sel) => ({ padding:"13px", borderRadius:4, border:`1px solid ${sel?"#00ffb3":"rgba(255,255,255,0.1)"}`, background:sel?"rgba(0,255,179,0.12)":"rgba(255,255,255,0.02)", color:sel?"#00ffb3":"#6677aa", fontFamily:"'Courier New',Courier,monospace", fontWeight:900, fontSize:14, letterSpacing:"0.1em", cursor:"pointer", textAlign:"center", transition:"all 0.15s" }),
-    rgnBtn:  (sel) => ({ padding:"8px 13px", borderRadius:4, border:`1px solid ${sel?"#00ffb3":"rgba(255,255,255,0.1)"}`, background:sel?"rgba(0,255,179,0.12)":"rgba(255,255,255,0.02)", color:sel?"#00ffb3":"#6677aa", fontFamily:"'Courier New',Courier,monospace", fontWeight:700, fontSize:13, cursor:"pointer", transition:"all 0.15s" }),
+    rgnBtn:  (sel) => ({ padding:"8px 13px", borderRadius:4, border:`1px solid ${sel?"#00ffb3":"rgba(255,255,255,0.1)"}`, background:sel?"rgba(0,255,179,0.12)":"rgba(255,255,255,0.02)", color:sel?"#00ffb3":"#6677aa", fontFamily:"'Courier New',Courier,monospace", fontWeight:700, fontSize:14, cursor:"pointer", transition:"all 0.15s" }),
     langBtn: (active) => ({ padding:"5px 11px", borderRadius:3, border:`1px solid ${active?"rgba(0,255,179,0.6)":"rgba(0,255,179,0.2)"}`, background:active?"rgba(0,255,179,0.15)":"transparent", color:active?"#00ffb3":"#445566", fontFamily:"'Courier New',Courier,monospace", fontWeight:900, fontSize:13, letterSpacing:"0.1em", cursor:"pointer" }),
     toggleBtn: (on) => ({ padding:"6px 16px", borderRadius:20, border:`1px solid ${on?"rgba(0,255,179,0.6)":"rgba(255,255,255,0.2)"}`, background:on?"rgba(0,255,179,0.15)":"rgba(255,255,255,0.04)", color:on?"#00ffb3":"#6677aa", fontFamily:"'Courier New',Courier,monospace", fontWeight:900, fontSize:13, letterSpacing:"0.1em", cursor:"pointer" }),
-    hintBtn: { padding:"10px 14px", borderRadius:4, border:"1px solid rgba(255,204,0,0.3)", background:"rgba(255,204,0,0.05)", color:"#ffcc66", fontFamily:"'Inter',system-ui,sans-serif", fontSize:14, fontWeight:600, cursor:"pointer", flex:1 },
+    hintBtn: { padding:"10px 14px", borderRadius:4, border:"1px solid rgba(255,204,0,0.3)", background:"rgba(255,204,0,0.05)", color:"#ffcc66", fontFamily:"'Inter',system-ui,sans-serif", fontSize:15, fontWeight:600, cursor:"pointer", flex:1 },
     hintBox: { padding:"12px 16px", borderRadius:4, border:"1px solid rgba(255,204,0,0.2)", background:"rgba(255,204,0,0.05)", fontSize:15, color:"#ffe08a", lineHeight:1.7 },
   };
 
@@ -1378,13 +1378,13 @@ export default function GeoWatch() {
     { key:"middleeast", label: t.regionMiddleEast },
   ];
 
-  // â”€â”€ SCREENS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── SCREENS ──────────────────────────────────────────────────────────────
 
   if (screen === "boot") return (
     <div style={{ ...S.app, justifyContent:"center" }}>
       <div style={S.scan} />
       <div style={S.logo}>GEOWATCH</div>
-      <div style={{ fontSize:14, color:"#334455", marginTop:8 }}>{t.initializing}</div>
+      <div style={{ fontSize:11, color:"#334455", marginTop:8 }}>{t.initializing}</div>
     </div>
   );
 
@@ -1401,8 +1401,8 @@ export default function GeoWatch() {
         <div style={{ textAlign:"center", padding:"12px 0 4px" }}>
           <div style={{ fontSize:13, color:"#6677aa", lineHeight:1.8 }}>
             {lang === "en"
-              ? <>Uses the <strong style={{color:"#00ffb3"}}>Windy Webcams API</strong> â€” over <strong style={{color:"#00ffb3"}}>40,000 cameras</strong> worldwide.</>
-              : <>Nutzt die <strong style={{color:"#00ffb3"}}>Windy Webcams API</strong> â€” Ã¼ber <strong style={{color:"#00ffb3"}}>40.000 Kameras</strong> weltweit.</>
+              ? <>Uses the <strong style={{color:"#00ffb3"}}>Windy Webcams API</strong> — over <strong style={{color:"#00ffb3"}}>40,000 cameras</strong> worldwide.</>
+              : <>Nutzt die <strong style={{color:"#00ffb3"}}>Windy Webcams API</strong> — über <strong style={{color:"#00ffb3"}}>40.000 Kameras</strong> weltweit.</>
             }
           </div>
         </div>
@@ -1411,9 +1411,9 @@ export default function GeoWatch() {
         <div style={S.stitle}>{t.step1}</div>
         <div style={S.infoBox}>
           {lang === "en" ? (
-            <>1. Open <a href="https://api.windy.com/keys" target="_blank" rel="noreferrer" style={{color:"#00ffb3"}}>api.windy.com/keys</a> and register<br/>2. <em>"Add new key"</em> â†’ Type: <strong>Webcams</strong><br/>3. Copy the key â€” it takes ~1â€“2 min to activate</>
+            <>1. Open <a href="https://api.windy.com/keys" target="_blank" rel="noreferrer" style={{color:"#00ffb3"}}>api.windy.com/keys</a> and register<br/>2. <em>"Add new key"</em> → Type: <strong>Webcams</strong><br/>3. Copy the key — it takes ~1–2 min to activate</>
           ) : (
-            <>1. Ã–ffne <a href="https://api.windy.com/keys" target="_blank" rel="noreferrer" style={{color:"#00ffb3"}}>api.windy.com/keys</a> und registriere dich<br/>2. <em>"Add new key"</em> â†’ Typ: <strong>Webcams</strong><br/>3. Key kopieren â€” er braucht ca. 1â€“2 Min. bis er aktiv ist</>
+            <>1. Öffne <a href="https://api.windy.com/keys" target="_blank" rel="noreferrer" style={{color:"#00ffb3"}}>api.windy.com/keys</a> und registriere dich<br/>2. <em>"Add new key"</em> → Typ: <strong>Webcams</strong><br/>3. Key kopieren — er braucht ca. 1–2 Min. bis er aktiv ist</>
           )}
         </div>
         <div style={S.stitle}>{t.step2}</div>
@@ -1433,11 +1433,11 @@ export default function GeoWatch() {
       <div style={S.scan} />
       <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:20, padding:24 }}>
         <div style={S.logo}>GEOWATCH</div>
-        <div style={{ fontSize:15, color:"#445566", letterSpacing:"0.2em" }}>{t.loadingCameras}</div>
+        <div style={{ fontSize:12, color:"#445566", letterSpacing:"0.2em" }}>{t.loadingCameras}</div>
         <div style={{ width:280, height:4, background:"#1a1f2e", borderRadius:2, overflow:"hidden" }}>
           <div style={{ height:"100%", width:`${(loadProg[0]/loadProg[1])*100}%`, background:"linear-gradient(90deg,#00ffb3,#00c8ff)", borderRadius:2, transition:"width 0.4s" }} />
         </div>
-        <div style={{ fontSize:14, color:"#334455" }}>Batch {loadProg[0]} / {loadProg[1]}</div>
+        <div style={{ fontSize:11, color:"#334455" }}>Batch {loadProg[0]} / {loadProg[1]}</div>
       </div>
     </div>
   );
@@ -1464,7 +1464,7 @@ export default function GeoWatch() {
         <div style={{ textAlign:"center", padding:"12px 0 4px" }}>
           <div style={{ fontSize:13, color:"#6677aa", lineHeight:1.7 }}>{t.tagline}</div>
           <div style={{ marginTop:10, display:"flex", gap:8, justifyContent:"center", flexWrap:"wrap" }}>
-            <span style={S.pill}>{camLoading ? "âŸ³ LOADING CAMERAS..." : t.camerasLoaded(pool.length)}</span>
+            <span style={S.pill}>{camLoading ? "⟳ LOADING CAMERAS..." : t.camerasLoaded(pool.length)}</span>
           </div>
           {camLoading && (
             <div style={{ width:"100%", height:3, background:"#1a1f2e", borderRadius:2, overflow:"hidden", marginTop:6 }}>
@@ -1477,7 +1477,7 @@ export default function GeoWatch() {
         <div style={{ background:"rgba(0,255,179,0.04)", border:"1px solid rgba(0,255,179,0.12)", borderRadius:4, padding:"14px 16px", fontSize:13, lineHeight:2.1 }}>
           <div style={{ display:"grid", gridTemplateColumns:"auto 1fr", gap:"0 16px" }}>
             <span style={{ color:"#00ffb3", fontWeight:700 }}>500</span><span style={{ color:"#6677aa" }}>{t.basePoints}</span>
-            <span style={{ color:"#00ffb3", fontWeight:700 }}>+ 0â€“500</span><span style={{ color:"#6677aa" }}>{t.speedBonus}</span>
+            <span style={{ color:"#00ffb3", fontWeight:700 }}>+ 0–500</span><span style={{ color:"#6677aa" }}>{t.speedBonus}</span>
             <span style={{ color:"#00ffb3", fontWeight:700 }}>= 1,000</span><span style={{ color:"#6677aa" }}>{t.maxPoints}</span>
             <span style={{ color:"#ff4455", fontWeight:700 }}>0</span><span style={{ color:"#6677aa" }}>{t.zeroPoints}</span>
           </div>
@@ -1485,13 +1485,13 @@ export default function GeoWatch() {
         <div style={S.div} />
         <div style={S.stitle}>{t.selectRounds}</div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8 }}>
-          <button style={S.rndBtn(rounds===5)}  onClick={() => setRounds(5)}>{t.fiveRounds}<br/><span style={{ fontSize:13, opacity:0.6 }}>{t.max5k}</span></button>
-          <button style={S.rndBtn(rounds===10)} onClick={() => setRounds(10)}>{t.tenRounds}<br/><span style={{ fontSize:13, opacity:0.6 }}>{t.max10k}</span></button>
-          <button style={S.rndBtn(rounds===15)} onClick={() => setRounds(15)}>{t.fifteenRounds}<br/><span style={{ fontSize:13, opacity:0.6 }}>{t.max15k}</span></button>
-          <button style={S.rndBtn(rounds===20)} onClick={() => setRounds(20)}>{t.twentyRounds}<br/><span style={{ fontSize:13, opacity:0.6 }}>{t.max20k}</span></button>
+          <button style={S.rndBtn(rounds===5)}  onClick={() => setRounds(5)}>{t.fiveRounds}<br/><span style={{ fontSize:10, opacity:0.6 }}>{t.max5k}</span></button>
+          <button style={S.rndBtn(rounds===10)} onClick={() => setRounds(10)}>{t.tenRounds}<br/><span style={{ fontSize:10, opacity:0.6 }}>{t.max10k}</span></button>
+          <button style={S.rndBtn(rounds===15)} onClick={() => setRounds(15)}>{t.fifteenRounds}<br/><span style={{ fontSize:10, opacity:0.6 }}>{t.max15k}</span></button>
+          <button style={S.rndBtn(rounds===20)} onClick={() => setRounds(20)}>{t.twentyRounds}<br/><span style={{ fontSize:10, opacity:0.6 }}>{t.max20k}</span></button>
         </div>
 
-        {/* â”€â”€ Feature 1: REGION FILTER â”€â”€ */}
+        {/* ── Feature 1: REGION FILTER ── */}
         <div style={S.div} />
         <div style={S.stitle}>{t.region}</div>
         <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
@@ -1499,26 +1499,26 @@ export default function GeoWatch() {
             <button key={r.key} style={S.rgnBtn(region===r.key)} onClick={() => { setRegion(r.key); setRegionWarning(""); }}>{r.label}</button>
           ))}
         </div>
-        {regionWarning && <div style={S.warnBox}>âš  {regionWarning}</div>}
+        {regionWarning && <div style={S.warnBox}>⚠ {regionWarning}</div>}
 
-        {/* â”€â”€ Feature 3: ZOOM MODE â”€â”€ */}
+        {/* ── Feature 3: ZOOM MODE ── */}
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <span style={{ fontSize:13, color:"#6677aa", letterSpacing:"0.05em" }}>ðŸ” {t.zoomModeLabel}</span>
+          <span style={{ fontSize:13, color:"#6677aa", letterSpacing:"0.05em" }}>🔍 {t.zoomModeLabel}</span>
           <button style={S.toggleBtn(zoomMode)} onClick={() => setZoomMode(v => !v)}>{zoomMode ? "ON" : "OFF"}</button>
         </div>
 
         <div style={S.div} />
-        {/* â”€â”€ DAILY CHALLENGE â”€â”€ */}
+        {/* ── DAILY CHALLENGE ── */}
         {(() => {
           const today = new Date().toISOString().slice(0, 10);
           const played = ls.get("geowatch:daily:" + today);
           const dateLabel = new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { day:"numeric", month:"long", year:"numeric" });
           return (
             <div style={{ border:"1px solid rgba(255,204,0,0.35)", borderRadius:6, padding:"14px 16px", background:"rgba(255,204,0,0.04)" }}>
-              <div style={{ fontSize:14, color:"#ffcc00", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace", marginBottom:4 }}>ðŸŒ {t.dailyChallenge}</div>
-              <div style={{ fontSize:15, color:"#6677aa", marginBottom:10 }}>{dateLabel} Â· {t.dailySubtitle(dailyCount)}</div>
+              <div style={{ fontSize:11, color:"#ffcc00", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace", marginBottom:4 }}>🌍 {t.dailyChallenge}</div>
+              <div style={{ fontSize:12, color:"#6677aa", marginBottom:10 }}>{dateLabel} · {t.dailySubtitle(dailyCount)}</div>
               {played ? (
-                <div style={{ fontSize:13, color:"#ffcc00" }}>âœ“ {t.alreadyPlayed} Â· {t.yourScore}: {played.score.toLocaleString()}</div>
+                <div style={{ fontSize:13, color:"#ffcc00" }}>✓ {t.alreadyPlayed} · {t.yourScore}: {played.score.toLocaleString()}</div>
               ) : (
                 <button
                   style={{ ...S.btn("p"), width:"100%", background:"linear-gradient(135deg,#ffcc00,#ff9900)", color:"#07080d", opacity:camLoading?0.4:1 }}
@@ -1536,21 +1536,21 @@ export default function GeoWatch() {
           value={username}
           onChange={e => { setUsername(e.target.value); setUsernameError(false); }}
           onKeyDown={e => { if (e.key === "Enter") { if (!username.trim()) { setUsernameError(true); } else { startGame(); } } }} />
-        {usernameError && <div style={{ fontSize:15, color:"#ff8899" }}>{t.usernameRequired}</div>}
+        {usernameError && <div style={{ fontSize:12, color:"#ff8899" }}>{t.usernameRequired}</div>}
         <button style={{ ...S.btn("p"), opacity:(!camLoading)?1:0.4, padding:"14px", fontSize:15 }}
           disabled={camLoading}
           onClick={() => { if (!username.trim()) { setUsernameError(true); } else { startGame(); } }}>{t.startMission(rounds)}</button>
-        {/* â”€â”€ EXTRA MODES â”€â”€ */}
+        {/* ── EXTRA MODES ── */}
         <div style={S.g2}>
           <div style={{ border:"1px solid rgba(0,200,255,0.35)", borderRadius:6, padding:"14px 16px", background:"rgba(0,200,255,0.04)", cursor:"pointer" }}
                onClick={() => { if (!username.trim()) { setUsernameError(true); } else { startTimeAttack(); } }}>
-            <div style={{ fontSize:14, color:"#00c8ff", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace", marginBottom:2 }}>{t.timeAttack}</div>
-            <div style={{ fontSize:14, color:"#445566" }}>{t.timeAttackSub}</div>
+            <div style={{ fontSize:11, color:"#00c8ff", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace", marginBottom:2 }}>{t.timeAttack}</div>
+            <div style={{ fontSize:11, color:"#445566" }}>{t.timeAttackSub}</div>
           </div>
           <div style={{ border:"1px solid rgba(180,100,255,0.35)", borderRadius:6, padding:"14px 16px", background:"rgba(180,100,255,0.04)", cursor:"pointer" }}
                onClick={() => { if (!username.trim()) { setUsernameError(true); } else { startPhotoCompare(); } }}>
-            <div style={{ fontSize:14, color:"#b464ff", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace", marginBottom:2 }}>{t.photoCompare}</div>
-            <div style={{ fontSize:14, color:"#445566" }}>{t.photoCompareSub}</div>
+            <div style={{ fontSize:11, color:"#b464ff", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace", marginBottom:2 }}>{t.photoCompare}</div>
+            <div style={{ fontSize:11, color:"#445566" }}>{t.photoCompareSub}</div>
           </div>
         </div>
         <div style={S.div} />
@@ -1560,7 +1560,7 @@ export default function GeoWatch() {
             onClick={() => { if (!username.trim()) { setUsernameError(true); } else { createDuel(); } }}>{t.createDuel}</button>
           <button style={S.btn("g")} onClick={() => setScreen("join-duel")}>{t.joinDuelBtn}</button>
         </div>
-        {showApiBtn && <button style={{ ...S.btn("g"), fontSize:14, opacity:0.5 }} onClick={() => setScreen("setup")}>{t.reloadCameras}</button>}
+        {showApiBtn && <button style={{ ...S.btn("g"), fontSize:11, opacity:0.5 }} onClick={() => setScreen("setup")}>{t.reloadCameras}</button>}
       </div>
     </div>
   );
@@ -1582,7 +1582,7 @@ export default function GeoWatch() {
         <div style={S.stitle}>{t.duelCode}</div>
         <input style={{ ...S.inp, fontSize:24, letterSpacing:"0.3em", textTransform:"uppercase", fontFamily:"'Courier New',Courier,monospace" }}
           placeholder="XXXXXX" value={joinInput} onChange={e => setJoinInput(e.target.value.toUpperCase())} maxLength={6} />
-        {joinError && <div style={S.errBox}>âš  {joinError}</div>}
+        {joinError && <div style={S.errBox}>⚠ {joinError}</div>}
         <button style={{ ...S.btn("p"), opacity:(username.trim()&&joinInput.length===6)?1:0.4 }}
           disabled={!username.trim()||joinInput.length!==6} onClick={joinDuel}>{t.accept}</button>
       </div>
@@ -1613,27 +1613,27 @@ export default function GeoWatch() {
             </div>
           </div>
           <div style={{ textAlign:"right" }}>
-            <div style={{ fontSize:14, color:"#445566", fontFamily:"'Courier New',Courier,monospace" }}>{t.roundLabel}</div>
+            <div style={{ fontSize:11, color:"#445566", fontFamily:"'Courier New',Courier,monospace" }}>{t.roundLabel}</div>
             <div style={{ fontSize:22, fontWeight:900, color:"#00ffb3", fontFamily:"'Courier New',Courier,monospace" }}>{roundIdx+1} / {roundCount}</div>
           </div>
         </div>
         <div style={S.card}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
             <div>
-              <div style={{ fontSize:14, color:"#445566" }}>{t.scoreLabel}: <span style={{ color:"#c8d0d8", fontWeight:700 }}>{totalScore}</span></div>
+              <div style={{ fontSize:11, color:"#445566" }}>{t.scoreLabel}: <span style={{ color:"#c8d0d8", fontWeight:700 }}>{totalScore}</span></div>
               {isTimeAttack && (
-                <div style={{ fontSize:14, color:"#00c8ff", fontFamily:"'Courier New',Courier,monospace", letterSpacing:"0.1em", marginTop:2 }}>
-                  â± {t.globalTimer}: <span style={{ fontWeight:900, color: taLeft > 60 ? "#00c8ff" : taLeft > 30 ? "#ffcc00" : "#ff4455" }}>{taLeft}s</span>
+                <div style={{ fontSize:11, color:"#00c8ff", fontFamily:"'Courier New',Courier,monospace", letterSpacing:"0.1em", marginTop:2 }}>
+                  ⏱ {t.globalTimer}: <span style={{ fontWeight:900, color: taLeft > 60 ? "#00c8ff" : taLeft > 30 ? "#ffcc00" : "#ff4455" }}>{taLeft}s</span>
                 </div>
               )}
               {streak >= 2 && (
-                <div style={{ fontSize:15, color: streak >= 5 ? "#ff6644" : "#ffaa00", fontFamily:"'Courier New',Courier,monospace", letterSpacing:"0.1em", marginTop:2 }}>
+                <div style={{ fontSize:12, color: streak >= 5 ? "#ff6644" : "#ffaa00", fontFamily:"'Courier New',Courier,monospace", letterSpacing:"0.1em", marginTop:2 }}>
                   {t.streakLabel(streak)}
                 </div>
               )}
               {newRecord && (
-                <div style={{ fontSize:13, color:"#ffcc00", fontFamily:"'Courier New',Courier,monospace", letterSpacing:"0.2em", marginTop:2, animation:"gw-record 3s ease-out forwards" }}>
-                  â­ {t.newRecord}
+                <div style={{ fontSize:10, color:"#ffcc00", fontFamily:"'Courier New',Courier,monospace", letterSpacing:"0.2em", marginTop:2, animation:"gw-record 3s ease-out forwards" }}>
+                  ⭐ {t.newRecord}
                 </div>
               )}
             </div>
@@ -1641,18 +1641,18 @@ export default function GeoWatch() {
           </div>
           <div style={S.tbBar(pct)} />
 
-          {/* â”€â”€ SNAPSHOT VIEWER â”€â”€ */}
+          {/* ── SNAPSHOT VIEWER ── */}
           <div style={{ position:"relative", width:"100%", aspectRatio:"16/9", background:"#0a0c12", borderRadius:6, overflow:"hidden", border:"1px solid rgba(0,255,179,0.2)" }}>
             <div style={{ position:"absolute", top:0, left:0, right:0, height:60, background:"linear-gradient(to bottom, #07080d 0%, transparent 100%)", zIndex:15, pointerEvents:"none" }} />
             <div style={{ position:"absolute", top:0, right:0, width:"55%", height:36, background:"#07080d", zIndex:15, pointerEvents:"none" }} />
             <div style={{ position:"absolute", bottom:0, left:0, right:0, height:"18%", background:"linear-gradient(to top, #07080d 60%, transparent 100%)", zIndex:15, pointerEvents:"none" }} />
-            <div style={{ position:"absolute", top:10, left:12, fontSize:13, letterSpacing:"0.18em", color:"#00ffb3", zIndex:20, background:"rgba(7,8,13,0.8)", padding:"2px 8px", borderRadius:3, fontFamily:"'Courier New',Courier,monospace" }}>
-              â— CAM | ID {currentCam.id.slice(-5)}
+            <div style={{ position:"absolute", top:10, left:12, fontSize:10, letterSpacing:"0.18em", color:"#00ffb3", zIndex:20, background:"rgba(7,8,13,0.8)", padding:"2px 8px", borderRadius:3, fontFamily:"'Courier New',Courier,monospace" }}>
+              ● CAM | ID {currentCam.id.slice(-5)}
             </div>
             {imgUnusable && (
               <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", background:"rgba(7,8,13,0.9)", zIndex:30, gap:8 }}>
-                <div style={{ fontSize:15, color:"#ffcc66", letterSpacing:"0.2em", fontFamily:"'Courier New',Courier,monospace" }}>âŸ³ SKIPPING CAMERA...</div>
-                <div style={{ fontSize:14, color:"#445566" }}>Image unreadable</div>
+                <div style={{ fontSize:12, color:"#ffcc66", letterSpacing:"0.2em", fontFamily:"'Courier New',Courier,monospace" }}>⟳ SKIPPING CAMERA...</div>
+                <div style={{ fontSize:11, color:"#445566" }}>Image unreadable</div>
               </div>
             )}
             {camImgUrl ? (
@@ -1661,13 +1661,13 @@ export default function GeoWatch() {
                 onLoad={(e) => { setImgLoading(false); const { naturalWidth: nw, naturalHeight: nh } = e.currentTarget; if (nw < 50 || nh < 50) setImgUnusable(true); }}
                 onError={handleImgError} />
             ) : (
-              <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", color:"#334455", fontSize:14, letterSpacing:"0.2em" }}>
+              <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", color:"#334455", fontSize:11, letterSpacing:"0.2em" }}>
                 {t.noImage}
               </div>
             )}
           </div>
 
-          {/* â”€â”€ Feature 4: HINT BUTTONS â”€â”€ */}
+          {/* ── Feature 4: HINT BUTTONS ── */}
           {!ans && (
             <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
               <div style={{ display:"flex", gap:8 }}>
@@ -1676,13 +1676,13 @@ export default function GeoWatch() {
               </div>
               {hintContUsed && (
                 <div style={S.hintBox}>
-                  <span style={{ fontSize:14, color:"#ffcc66", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace" }}>{t.hintContinentLabel}: </span>
+                  <span style={{ fontSize:11, color:"#ffcc66", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace" }}>{t.hintContinentLabel}: </span>
                   {currentCam.continent}
                 </div>
               )}
               {hintClimUsed && (
                 <div style={S.hintBox}>
-                  <span style={{ fontSize:14, color:"#ffcc66", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace" }}>{t.hintClimateLabel}: </span>
+                  <span style={{ fontSize:11, color:"#ffcc66", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace" }}>{t.hintClimateLabel}: </span>
                   {hintClimLoad ? <em style={{ color:"#6677aa" }}>{t.hintLoading}</em> : hintClimText}
                 </div>
               )}
@@ -1695,7 +1695,7 @@ export default function GeoWatch() {
               const st = optSt(city);
               return (
                 <button key={city} style={S.optBtn(st)} onClick={() => !ans && handleAnswer(city)}>
-                  {st==="c"?"âœ“ ":st==="w"?"âœ— ":"â—‹ "}{city}
+                  {st==="c"?"✓ ":st==="w"?"✗ ":"○ "}{city}
                 </button>
               );
             })}
@@ -1704,7 +1704,7 @@ export default function GeoWatch() {
           {ans && (
             <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
               <div style={{ padding:"12px 16px", background:"rgba(0,255,179,0.05)", borderRadius:4, border:"1px solid rgba(0,255,179,0.15)" }}>
-                <div style={{ fontSize:14, color:"#445566", marginBottom:4 }}>{t.locationRevealed}</div>
+                <div style={{ fontSize:11, color:"#445566", marginBottom:4 }}>{t.locationRevealed}</div>
                 <div style={{ fontSize:18, fontWeight:900, color:"#00ffb3" }}>{currentCam.flag} {currentCam.city}, {currentCam.country}</div>
                 {isCorrect ? (
                   <div style={{ marginTop:6, display:"flex", flexDirection:"column", gap:2 }}>
@@ -1730,18 +1730,18 @@ export default function GeoWatch() {
                 funFactLoad ? (
                   <div style={{ padding:"12px 16px", background:"rgba(0,255,179,0.03)", borderRadius:4, border:"1px solid rgba(0,255,179,0.1)", display:"flex", alignItems:"center", gap:10 }}>
                     <div style={{ width:14, height:14, border:"2px solid #00ffb3", borderTopColor:"transparent", borderRadius:"50%", animation:"gw-spin 0.8s linear infinite", flexShrink:0 }} />
-                    <span style={{ fontSize:15, color:"#445566", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace" }}>{t.loadingFunFact}</span>
+                    <span style={{ fontSize:12, color:"#445566", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace" }}>{t.loadingFunFact}</span>
                   </div>
                 ) : funFactError ? (
-                  <div style={{ padding:"12px 16px", background:"rgba(255,68,85,0.08)", borderRadius:4, border:"1px solid rgba(255,68,85,0.3)", fontSize:15, color:"#ff8899", wordBreak:"break-all" }}>
+                  <div style={{ padding:"12px 16px", background:"rgba(255,68,85,0.08)", borderRadius:4, border:"1px solid rgba(255,68,85,0.3)", fontSize:12, color:"#ff8899", wordBreak:"break-all" }}>
                     <strong style={{ letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace" }}>{t.funFactError}</strong><br/>{funFactError}
                   </div>
                 ) : funFact ? (
                   <div style={{ padding:"16px 20px", background:"rgba(0,255,179,0.06)", borderRadius:6, border:"1px solid rgba(0,255,179,0.25)" }}>
-                    <div style={{ fontSize:14, color:"#00ffb3", letterSpacing:"0.2em", marginBottom:10, fontFamily:"'Courier New',Courier,monospace" }}>{t.funFact}</div>
-                    <div style={{ fontSize:16, color:"#d0d8e0", lineHeight:1.8 }}>{funFact.fact}</div>
+                    <div style={{ fontSize:11, color:"#00ffb3", letterSpacing:"0.2em", marginBottom:10, fontFamily:"'Courier New',Courier,monospace" }}>{t.funFact}</div>
+                    <div style={{ fontSize:15, color:"#d0d8e0", lineHeight:1.8 }}>{funFact.fact}</div>
                     {funFact.source && (
-                      <a href={funFact.url} target="_blank" rel="noreferrer" style={{ display:"block", fontSize:15, color:"#00ffb3", textDecoration:"none", marginTop:8 }}>â†— {funFact.source}</a>
+                      <a href={funFact.url} target="_blank" rel="noreferrer" style={{ display:"block", fontSize:12, color:"#00ffb3", textDecoration:"none", marginTop:8 }}>↗ {funFact.source}</a>
                     )}
                   </div>
                 ) : null
@@ -1756,8 +1756,8 @@ export default function GeoWatch() {
 
   if (screen === "daily-result" && dailyResult) {
     const shareText = lang === "de"
-      ? `Ich habe ${dailyResult.score} Punkte in der GeoWatch Daily Challenge erreicht! ðŸŒ Platz ${dailyResult.rank} von ${dailyResult.total} Spielern. geowatchgame.vercel.app`
-      : `I scored ${dailyResult.score} points in the GeoWatch Daily Challenge! ðŸŒ Rank ${dailyResult.rank} of ${dailyResult.total} players. geowatchgame.vercel.app`;
+      ? `Ich habe ${dailyResult.score} Punkte in der GeoWatch Daily Challenge erreicht! 🌍 Platz ${dailyResult.rank} von ${dailyResult.total} Spielern. geowatchgame.vercel.app`
+      : `I scored ${dailyResult.score} points in the GeoWatch Daily Challenge! 🌍 Rank ${dailyResult.rank} of ${dailyResult.total} players. geowatchgame.vercel.app`;
     return (
       <div style={S.app}>
         <div style={S.scan} />
@@ -1769,18 +1769,18 @@ export default function GeoWatch() {
         </div>
         <div style={S.card}>
           <div style={{ textAlign:"center", padding:"12px 0" }}>
-            <div style={{ fontSize:14, color:"#ffcc00", letterSpacing:"0.2em", marginBottom:8, fontFamily:"'Courier New',Courier,monospace" }}>ðŸŒ {t.dailyChallenge}</div>
-            <div style={{ fontSize:14, color:"#445566", letterSpacing:"0.2em", marginBottom:10, fontFamily:"'Courier New',Courier,monospace" }}>{t.dailyComplete}</div>
+            <div style={{ fontSize:11, color:"#ffcc00", letterSpacing:"0.2em", marginBottom:8, fontFamily:"'Courier New',Courier,monospace" }}>🌍 {t.dailyChallenge}</div>
+            <div style={{ fontSize:11, color:"#445566", letterSpacing:"0.2em", marginBottom:10, fontFamily:"'Courier New',Courier,monospace" }}>{t.dailyComplete}</div>
             <div style={S.score}>{dailyResult.score.toLocaleString()}</div>
             <div style={{ fontSize:15, color:"#ffcc00", marginTop:8, fontWeight:700 }}>{t.dailyRank(dailyResult.rank, dailyResult.total)}</div>
-            <div style={{ fontSize:15, color:"#445566", marginTop:6, fontFamily:"'Courier New',Courier,monospace" }}>â± {t.nextChallenge(countdown)}</div>
+            <div style={{ fontSize:12, color:"#445566", marginTop:6, fontFamily:"'Courier New',Courier,monospace" }}>⏱ {t.nextChallenge(countdown)}</div>
           </div>
           <div style={S.div} />
           <div style={S.stitle}>{t.todayTop}</div>
           <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
             {dailyLB.map((e, i) => (
               <div key={i} style={{ ...S.lbRow(i), border: e.name === username.trim() ? "1px solid rgba(255,204,0,0.5)" : undefined }}>
-                <div style={{ fontSize:14, fontWeight:900, color:i===0?"#ffcc00":i===1?"#aaaacc":i===2?"#cc8866":"#445566", minWidth:24, fontFamily:"'Courier New',Courier,monospace" }}>{i===0?"â—ˆ":i===1?"â—‡":i===2?"â—†":`${i+1}.`}</div>
+                <div style={{ fontSize:14, fontWeight:900, color:i===0?"#ffcc00":i===1?"#aaaacc":i===2?"#cc8866":"#445566", minWidth:24, fontFamily:"'Courier New',Courier,monospace" }}>{i===0?"◈":i===1?"◇":i===2?"◆":`${i+1}.`}</div>
                 <div style={{ flex:1, fontSize:15, color: e.name === username.trim() ? "#ffcc00" : undefined }}>{e.name}</div>
                 <div style={{ fontWeight:900, color:"#00ffb3", minWidth:60, textAlign:"right", fontFamily:"'Courier New',Courier,monospace" }}>{e.score.toLocaleString()}</div>
               </div>
@@ -1790,7 +1790,7 @@ export default function GeoWatch() {
           <button style={{ ...S.btn("g"), borderColor:"rgba(0,200,255,0.5)", color:"#00c8ff" }} onClick={() => {
             if (navigator.share) { navigator.share({ title:"GeoWatch Daily", text: shareText }).catch(() => {}); }
             else { const a = document.createElement("a"); a.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`; a.target = "_blank"; a.click(); }
-          }}>ðŸ“¤ {t.shareResult}</button>
+          }}>📤 {t.shareResult}</button>
           <button style={S.btn("g")} onClick={() => setScreen("home")}>{t.mainMenu}</button>
         </div>
       </div>
@@ -1808,16 +1808,16 @@ export default function GeoWatch() {
       </div>
       <div style={S.card}>
         <div style={{ textAlign:"center", padding:"12px 0" }}>
-          <div style={{ fontSize:14, color:"#445566", letterSpacing:"0.2em", marginBottom:10, fontFamily:"'Courier New',Courier,monospace" }}>{t.missionComplete(gameRounds)}</div>
+          <div style={{ fontSize:11, color:"#445566", letterSpacing:"0.2em", marginBottom:10, fontFamily:"'Courier New',Courier,monospace" }}>{t.missionComplete(gameRounds)}</div>
           <div style={S.score}>{totalScore}</div>
-          <div style={{ fontSize:15, color:"#6677aa", marginTop:4 }}>{t.pointsMax(gameRounds * MAX_SCORE)}</div>
-          {maxStreak >= 2 && <div style={{ fontSize:15, color:"#ffaa00", marginTop:6, fontFamily:"'Courier New',Courier,monospace" }}>{t.streakLabel(maxStreak)} MAX</div>}
+          <div style={{ fontSize:12, color:"#6677aa", marginTop:4 }}>{t.pointsMax(gameRounds * MAX_SCORE)}</div>
+          {maxStreak >= 2 && <div style={{ fontSize:12, color:"#ffaa00", marginTop:6, fontFamily:"'Courier New',Courier,monospace" }}>{t.streakLabel(maxStreak)} MAX</div>}
         </div>
         <div style={S.div} />
         <div style={S.stitle}>{t.roundSummary}</div>
         {roundScores.map((s, i) => (
           <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 12px", background:"rgba(255,255,255,0.02)", borderRadius:4, border:"1px solid rgba(255,255,255,0.05)" }}>
-            <span style={{ fontSize:13, color:"#6677aa" }}>{t.roundN(i+1)} Â· {pool[sequence[i]]?.city} {pool[sequence[i]]?.flag}</span>
+            <span style={{ fontSize:13, color:"#6677aa" }}>{t.roundN(i+1)} · {pool[sequence[i]]?.city} {pool[sequence[i]]?.flag}</span>
             <span style={{ fontWeight:700, color:s>0?"#00ffb3":"#ff4455" }}>{s>0?`+${s}`:"0"}</span>
           </div>
         ))}
@@ -1836,17 +1836,17 @@ export default function GeoWatch() {
 
   if (screen === "leaderboard") {
     const lbRankColor = (i) => i===0?"#ffcc00":i===1?"#aaaacc":i===2?"#cc8866":"#445566";
-    const lbRankLabel = (i) => i===0?"â—ˆ":i===1?"â—‡":i===2?"â—†":`${i+1}.`;
+    const lbRankLabel = (i) => i===0?"◈":i===1?"◇":i===2?"◆":`${i+1}.`;
     const LbCol = ({ entries }) => (
       <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
         {entries.length === 0
-          ? <div style={{ color:"#445566", fontSize:15, padding:"8px 0" }}>{t.noEntries}</div>
+          ? <div style={{ color:"#445566", fontSize:12, padding:"8px 0" }}>{t.noEntries}</div>
           : entries.map((e, i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", background:i===0?"rgba(0,255,179,0.08)":"rgba(255,255,255,0.02)", borderRadius:4, border:i===0?"1px solid rgba(0,255,179,0.3)":"1px solid rgba(255,255,255,0.05)" }}>
-              <div style={{ fontSize:15, fontWeight:900, color:lbRankColor(i), minWidth:20, fontFamily:"'Courier New',Courier,monospace" }}>{lbRankLabel(i)}</div>
+              <div style={{ fontSize:12, fontWeight:900, color:lbRankColor(i), minWidth:20, fontFamily:"'Courier New',Courier,monospace" }}>{lbRankLabel(i)}</div>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:13, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.name}</div>
-                <div style={{ fontSize:13, color:"#445566" }}>{e.date}</div>
+                <div style={{ fontSize:10, color:"#445566" }}>{e.date}</div>
               </div>
               <div style={{ fontWeight:900, color:"#00ffb3", fontSize:13, fontFamily:"'Courier New',Courier,monospace", flexShrink:0 }}>{e.score}</div>
             </div>
@@ -1887,7 +1887,7 @@ export default function GeoWatch() {
                 <LbCol entries={leaderboard.twenty} />
               </div>
               <div style={{ gridColumn:"1/-1" }}>
-                <div style={{ ...S.stitle, marginBottom:8, color:"#00c8ff" }}>â± {t.timeAttackLabel}</div>
+                <div style={{ ...S.stitle, marginBottom:8, color:"#00c8ff" }}>⏱ {t.timeAttackLabel}</div>
                 <LbCol entries={taLBData} />
               </div>
             </div>
@@ -1898,12 +1898,12 @@ export default function GeoWatch() {
           }
           <div style={S.div} />
           <div style={S.stitle}>{t.badgeRanking}</div>
-          <div style={{ background:"rgba(0,255,179,0.04)", border:"1px solid rgba(0,255,179,0.12)", borderRadius:4, padding:"12px 16px", fontSize:15, lineHeight:2.2 }}>
+          <div style={{ background:"rgba(0,255,179,0.04)", border:"1px solid rgba(0,255,179,0.12)", borderRadius:4, padding:"12px 16px", fontSize:12, lineHeight:2.2 }}>
             <div style={{ display:"grid", gridTemplateColumns:"auto 1fr", gap:"0 14px" }}>
-              <span>ðŸ…</span><span style={{ color:"#6677aa" }}>1â€“9 {t.perfectRounds}</span>
-              <span>â­</span><span style={{ color:"#6677aa" }}>10â€“19 {t.perfectRounds}</span>
-              <span>ðŸ’Ž</span><span style={{ color:"#6677aa" }}>20â€“49 {t.perfectRounds}</span>
-              <span>ðŸ‘‘</span><span style={{ color:"#6677aa" }}>50+ {t.perfectRounds}</span>
+              <span>🏅</span><span style={{ color:"#6677aa" }}>1–9 {t.perfectRounds}</span>
+              <span>⭐</span><span style={{ color:"#6677aa" }}>10–19 {t.perfectRounds}</span>
+              <span>💎</span><span style={{ color:"#6677aa" }}>20–49 {t.perfectRounds}</span>
+              <span>👑</span><span style={{ color:"#6677aa" }}>50+ {t.perfectRounds}</span>
             </div>
           </div>
         </div>
@@ -1936,11 +1936,11 @@ export default function GeoWatch() {
                   [t.totalScore,   st.totalScore.toLocaleString()],
                   [t.bestGame,     st.bestScore.toLocaleString()],
                   [t.accuracy,     `${accPct}%`],
-                  [t.bestStreak,   `ðŸ”¥ ${st.bestStreak}x`],
+                  [t.bestStreak,   `🔥 ${st.bestStreak}x`],
                   [t.correct,      `${st.correctAnswers} / ${st.totalAnswers}`],
                 ].map(([label, val]) => (
                   <div key={label} style={{ background:"rgba(0,255,179,0.04)", border:"1px solid rgba(0,255,179,0.12)", borderRadius:4, padding:"12px 14px" }}>
-                    <div style={{ fontSize:13, color:"#445566", letterSpacing:"0.15em", textTransform:"uppercase", marginBottom:4 }}>{label}</div>
+                    <div style={{ fontSize:10, color:"#445566", letterSpacing:"0.15em", textTransform:"uppercase", marginBottom:4 }}>{label}</div>
                     <div style={{ fontSize:20, fontWeight:900, color:"#00ffb3", fontFamily:"'Courier New',Courier,monospace" }}>{val}</div>
                   </div>
                 ))}
@@ -1951,34 +1951,20 @@ export default function GeoWatch() {
                   <div style={S.div} />
                   <div style={S.stitle}>{t.byContinent}</div>
                   <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                    {(() => {
-                      // Merge old full-name keys (e.g. "Europe") with new code keys (e.g. "EU")
-                      const nameToCode = {};
-                      Object.values(CONTINENT_NAMES.en).forEach((name, i) => {
-                        nameToCode[name] = Object.keys(CONTINENT_NAMES.en)[i];
-                      });
-                      const merged = {};
-                      Object.entries(st.continentStats).forEach(([cont, data]) => {
-                        const code = nameToCode[cont] || cont;
-                        if (!merged[code]) merged[code] = { correct:0, total:0 };
-                        merged[code].correct += data.correct;
-                        merged[code].total   += data.total;
-                      });
-                      return Object.entries(merged).sort((a,b) => b[1].total - a[1].total).map(([cont, data]) => {
-                        const pct = data.total > 0 ? Math.round(data.correct / data.total * 100) : 0;
-                        return (
-                          <div key={cont}>
-                            <div style={{ display:"flex", justifyContent:"space-between", fontSize:15, marginBottom:4 }}>
-                              <span style={{ color:"#c8d0d8" }}>{contName(cont, lang)}</span>
-                              <span style={{ color:"#6677aa" }}>{pct}% &nbsp;({data.correct}/{data.total})</span>
-                            </div>
-                            <div style={{ height:5, background:"#1a1f2e", borderRadius:3, overflow:"hidden" }}>
-                              <div style={{ height:"100%", width:`${pct}%`, background:"linear-gradient(90deg,#00ffb3,#00c8ff)", borderRadius:3, transition:"width 0.4s" }} />
-                            </div>
+                    {Object.entries(st.continentStats).sort((a,b) => b[1].total - a[1].total).map(([cont, data]) => {
+                      const pct = data.total > 0 ? Math.round(data.correct / data.total * 100) : 0;
+                      return (
+                        <div key={cont}>
+                          <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
+                            <span style={{ color:"#c8d0d8" }}>{contName(cont, lang)}</span>
+                            <span style={{ color:"#6677aa" }}>{pct}% &nbsp;({data.correct}/{data.total})</span>
                           </div>
-                        );
-                      });
-                    })()}
+                          <div style={{ height:5, background:"#1a1f2e", borderRadius:3, overflow:"hidden" }}>
+                            <div style={{ height:"100%", width:`${pct}%`, background:"linear-gradient(90deg,#00ffb3,#00c8ff)", borderRadius:3, transition:"width 0.4s" }} />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </>
               )}
@@ -1996,7 +1982,7 @@ export default function GeoWatch() {
               </div>
 
               <div style={S.div} />
-              {/* â”€â”€ STREAK CALENDAR â”€â”€ */}
+              {/* ── STREAK CALENDAR ── */}
               {(() => {
                 const dates   = ls.get(PLAYDATES_KEY) || [];
                 const dateSet = new Set(dates);
@@ -2010,15 +1996,15 @@ export default function GeoWatch() {
                 }
                 const dayStreak = calcDayStreak(dates);
                 const awards = [
-                  { key:"d3",  label:"3 Days",  labelDe:"3 Tage",  days:3,  icon:"ðŸ”¥" },
-                  { key:"w1",  label:"Weekly",  labelDe:"Woche",   days:7,  icon:"â­" },
-                  { key:"m1",  label:"Monthly", labelDe:"Monat",   days:30, icon:"ðŸ’Ž" },
+                  { key:"d3",  label:"3 Days",  labelDe:"3 Tage",  days:3,  icon:"🔥" },
+                  { key:"w1",  label:"Weekly",  labelDe:"Woche",   days:7,  icon:"⭐" },
+                  { key:"m1",  label:"Monthly", labelDe:"Monat",   days:30, icon:"💎" },
                 ];
                 return (
                   <>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                       <div style={S.stitle}>{lang==="de"?"SPIELKALENDER":"PLAY CALENDAR"}</div>
-                      <span style={{ fontSize:15, color:"#00ffb3", fontFamily:"'Courier New',Courier,monospace" }}>ðŸ”¥ {dayStreak} {lang==="de"?"Tage":"day"} streak</span>
+                      <span style={{ fontSize:12, color:"#00ffb3", fontFamily:"'Courier New',Courier,monospace" }}>🔥 {dayStreak} {lang==="de"?"Tage":"day"} streak</span>
                     </div>
                     <div style={{ display:"grid", gridTemplateColumns:"repeat(16, 1fr)", gap:3 }}>
                       {cells.map(d => (
@@ -2031,7 +2017,7 @@ export default function GeoWatch() {
                         return (
                           <div key={a.key} style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 10px", borderRadius:4, border:`1px solid ${earned?"rgba(0,255,179,0.4)":"rgba(255,255,255,0.06)"}`, background:earned?"rgba(0,255,179,0.07)":"transparent", opacity:earned?1:0.4 }}>
                             <span>{a.icon}</span>
-                            <span style={{ fontSize:14, color:earned?"#00ffb3":"#445566" }}>{lang==="de"?a.labelDe:a.label}</span>
+                            <span style={{ fontSize:11, color:earned?"#00ffb3":"#445566" }}>{lang==="de"?a.labelDe:a.label}</span>
                           </div>
                         );
                       })}
@@ -2040,7 +2026,7 @@ export default function GeoWatch() {
                 );
               })()}
               <div style={S.div} />
-              <button style={{ ...S.btn("g"), fontSize:15, opacity:0.6 }} onClick={() => { ls.set(STATS_KEY, emptyStats()); setScreen("home"); }}>{t.resetStats}</button>
+              <button style={{ ...S.btn("g"), fontSize:12, opacity:0.6 }} onClick={() => { ls.set(STATS_KEY, emptyStats()); setScreen("home"); }}>{t.resetStats}</button>
             </>
           )}
         </div>
@@ -2075,7 +2061,7 @@ export default function GeoWatch() {
                   style={{ width:"100%", background:"none", border:"none", padding:"16px 4px", display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12, cursor:"pointer", textAlign:"left" }}
                 >
                   <span style={{ fontSize:14, fontWeight:700, color:"#00ffb3", lineHeight:1.5, flex:1 }}>{q}</span>
-                  <span style={{ fontSize:18, color:"#00ffb3", fontWeight:900, flexShrink:0, marginTop:1, fontFamily:"'Courier New',Courier,monospace", opacity:0.7 }}>{faqOpen.has(i) ? "âˆ’" : "+"}</span>
+                  <span style={{ fontSize:18, color:"#00ffb3", fontWeight:900, flexShrink:0, marginTop:1, fontFamily:"'Courier New',Courier,monospace", opacity:0.7 }}>{faqOpen.has(i) ? "−" : "+"}</span>
                 </button>
                 <div style={{ overflow:"hidden", maxHeight: faqOpen.has(i) ? "600px" : "0", transition:"max-height 0.3s ease" }}>
                   <div style={{ padding:"0 4px 16px", fontSize:14, color:"#8899aa", lineHeight:1.8 }}>{a}</div>
@@ -2103,27 +2089,27 @@ export default function GeoWatch() {
           {isCh ? (
             <>
               <div style={{ textAlign:"center", padding:"12px 0" }}>
-                <div style={{ fontSize:14, color:"#445566", marginBottom:10, fontFamily:"'Courier New',Courier,monospace" }}>{t.yourScore}</div>
+                <div style={{ fontSize:11, color:"#445566", marginBottom:10, fontFamily:"'Courier New',Courier,monospace" }}>{t.yourScore}</div>
                 <div style={S.score}>{duelResult.myScore}</div>
               </div>
               <div style={{ padding:"16px", background:"rgba(0,255,179,0.05)", borderRadius:4, border:"1px solid rgba(0,255,179,0.2)" }}>
-                <div style={{ fontSize:14, color:"#445566", marginBottom:6, fontFamily:"'Courier New',Courier,monospace" }}>{t.codeForOpponent}</div>
+                <div style={{ fontSize:11, color:"#445566", marginBottom:6, fontFamily:"'Courier New',Courier,monospace" }}>{t.codeForOpponent}</div>
                 <div style={S.code}>{duelResult.duelCode}</div>
-                <div style={{ fontSize:15, color:"#6677aa", textAlign:"center" }}>{t.opponentInstruction}</div>
+                <div style={{ fontSize:12, color:"#6677aa", textAlign:"center" }}>{t.opponentInstruction}</div>
               </div>
             </>
           ) : (
             <>
-              <div style={{ fontSize:14, color:"#445566", textAlign:"center", padding:"10px 0", fontFamily:"'Courier New',Courier,monospace" }}>{t.result}</div>
+              <div style={{ fontSize:11, color:"#445566", textAlign:"center", padding:"10px 0", fontFamily:"'Courier New',Courier,monospace" }}>{t.result}</div>
               <div style={S.g2}>
                 {[
                   { label: t.you(username),        score:duelResult.myScore,       win:duelResult.myScore>=duelResult.opponentScore, color:"#00ffb3" },
                   { label: duelResult.opponentName, score:duelResult.opponentScore, win:duelResult.opponentScore>duelResult.myScore,  color:"#ff4455" },
                 ].map(p => (
                   <div key={p.label} style={{ padding:16, background:p.win?"rgba(0,255,179,0.08)":"rgba(255,255,255,0.02)", borderRadius:4, border:`1px solid ${p.win?"rgba(0,255,179,0.3)":"rgba(255,255,255,0.1)"}`, textAlign:"center" }}>
-                    <div style={{ fontSize:14, color:"#445566", marginBottom:4 }}>{p.label}</div>
+                    <div style={{ fontSize:11, color:"#445566", marginBottom:4 }}>{p.label}</div>
                     <div style={{ fontSize:28, fontWeight:900, color:p.color, fontFamily:"'Courier New',Courier,monospace" }}>{p.score}</div>
-                    {p.win && <div style={{ fontSize:14, color:p.color, marginTop:4, fontFamily:"'Courier New',Courier,monospace" }}>{t.winner}</div>}
+                    {p.win && <div style={{ fontSize:11, color:p.color, marginTop:4, fontFamily:"'Courier New',Courier,monospace" }}>{t.winner}</div>}
                   </div>
                 ))}
               </div>
@@ -2139,7 +2125,7 @@ export default function GeoWatch() {
     );
   }
 
-  // â”€â”€ PHOTO COMPARE SCREEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── PHOTO COMPARE SCREEN ──────────────────────────────────────────────────
   if (screen === "compare") {
     const taPct = timeLeft / 20;
     const totalCmpScore = compareScores.reduce((a,b)=>a+b,0);
@@ -2154,7 +2140,7 @@ export default function GeoWatch() {
           <div style={{fontSize:22,fontWeight:900,color:"#b464ff",fontFamily:"'Courier New',Courier,monospace"}}>{compareRound+1} / {COMPARE_ROUNDS}</div>
         </div>
         <div style={S.card}>
-          <div style={{fontSize:14,color:"#b464ff",letterSpacing:"0.15em",fontFamily:"'Courier New',Courier,monospace",marginBottom:6}}>ðŸ–¼ {t.photoCompareQ(contName(compareTarget, lang))}</div>
+          <div style={{fontSize:11,color:"#b464ff",letterSpacing:"0.15em",fontFamily:"'Courier New',Courier,monospace",marginBottom:6}}>🖼 {t.photoCompareQ(contName(compareTarget))}</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
             {["left","right"].map(side=>{
               const cam = side==="left"?compareLeft:compareRight;
@@ -2167,11 +2153,11 @@ export default function GeoWatch() {
                   {cam?.imageUrl && <img src={cam.imageUrl} alt="" style={{width:"100%",aspectRatio:"16/9",objectFit:"cover",display:"block"}}/>}
                   {showResult && (
                     <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:isCorrect?"rgba(0,255,179,0.25)":"rgba(255,68,85,0.25)",fontSize:28}}>
-                      {isCorrect?"âœ“":"âœ—"}
+                      {isCorrect?"✓":"✗"}
                     </div>
                   )}
-                  {isSelected && !isCorrect && <div style={{position:"absolute",bottom:4,left:0,right:0,textAlign:"center",fontSize:13,color:"#ff4455",fontFamily:"monospace"}}>{contName(getContinent(cam?.countryCode), lang)}</div>}
-                  {showResult && isCorrect && <div style={{position:"absolute",bottom:4,left:0,right:0,textAlign:"center",fontSize:13,color:"#00ffb3",fontFamily:"monospace"}}>{cam?.city}, {cam?.country}</div>}
+                  {isSelected && !isCorrect && <div style={{position:"absolute",bottom:4,left:0,right:0,textAlign:"center",fontSize:10,color:"#ff4455",fontFamily:"monospace"}}>{contName(getContinent(cam?.countryCode))}</div>}
+                  {showResult && isCorrect && <div style={{position:"absolute",bottom:4,left:0,right:0,textAlign:"center",fontSize:10,color:"#00ffb3",fontFamily:"monospace"}}>{cam?.city}, {cam?.country}</div>}
                 </div>
               );
             })}
@@ -2181,7 +2167,7 @@ export default function GeoWatch() {
               <div style={{fontSize:16,fontWeight:900,color:compareSelected===compareCorrect?"#00ffb3":"#ff4455",fontFamily:"monospace"}}>
                 {compareSelected===compareCorrect?"+500 pts":"0 pts"}
               </div>
-              <div style={{fontSize:14,color:"#445566",marginTop:2}}>{t.scoreLabel}: {totalCmpScore}</div>
+              <div style={{fontSize:11,color:"#445566",marginTop:2}}>{t.scoreLabel}: {totalCmpScore}</div>
               {compareRound+1 < COMPARE_ROUNDS
                 ? <button style={{...S.btn("p"),marginTop:10}} onClick={nextCompareRound}>{t.nextRound}</button>
                 : <button style={{...S.btn("p"),marginTop:10}} onClick={()=>setScreen("compare-over")}>{t.results}</button>
@@ -2204,7 +2190,7 @@ export default function GeoWatch() {
           <LangSwitch/>
         </div>
         <div style={S.card}>
-          <div style={{fontSize:18,fontWeight:900,letterSpacing:"0.2em",color:"#b464ff",fontFamily:"'Courier New',Courier,monospace",marginBottom:8}}>ðŸ–¼ {t.photoCompare}</div>
+          <div style={{fontSize:18,fontWeight:900,letterSpacing:"0.2em",color:"#b464ff",fontFamily:"'Courier New',Courier,monospace",marginBottom:8}}>🖼 {t.photoCompare}</div>
           <div style={{fontSize:36,fontWeight:900,color:"#00ffb3",fontFamily:"monospace",textAlign:"center",margin:"16px 0"}}>{total.toLocaleString()}</div>
           <div style={{textAlign:"center",fontSize:13,color:"#6677aa",marginBottom:16}}>{correct} / {COMPARE_ROUNDS} {t.correct}</div>
           <div style={S.g2}>
@@ -2216,7 +2202,7 @@ export default function GeoWatch() {
     );
   }
 
-  // â”€â”€ FRIENDS LEADERBOARD SCREEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── FRIENDS LEADERBOARD SCREEN ────────────────────────────────────────────
   if (screen === "friends-lb") {
     return (
       <div style={S.app}>
@@ -2243,7 +2229,7 @@ export default function GeoWatch() {
                 const g={code,members:[username.trim()]};
                 setFriendGroup(g); ls.set("geowatch:friendgroup",g);
               }}>{t.createGroup}</button>
-              <div style={{fontSize:14,color:"#445566",textAlign:"center",margin:"4px 0"}}>{lang==="de"?"â€” oder â€”":"â€” or â€”"}</div>
+              <div style={{fontSize:11,color:"#445566",textAlign:"center",margin:"4px 0"}}>{lang==="de"?"— oder —":"— or —"}</div>
               <input style={{...S.inp,marginBottom:8}} placeholder={t.groupCode} value={friendJoinInput} onChange={e=>setFriendJoinInput(e.target.value.toUpperCase())}/>
               <button style={S.btn("g")} onClick={async()=>{
                 if(!username.trim()){setFriendError(lang==="de"?"Bitte zuerst Benutzernamen eingeben":"Please enter a username first");return;}
@@ -2252,21 +2238,21 @@ export default function GeoWatch() {
                 const g={code:friendJoinInput.trim(),members};
                 setFriendGroup(g); ls.set("geowatch:friendgroup",g);
               }}>{t.joinGroup}</button>
-              {friendError&&<div style={{fontSize:15,color:"#ff8899",marginTop:6}}>{friendError}</div>}
+              {friendError&&<div style={{fontSize:12,color:"#ff8899",marginTop:6}}>{friendError}</div>}
             </>
           ) : (
             <>
               <div style={{display:"flex",alignItems:"center",gap:8,margin:"12px 0",padding:"10px 14px",background:"rgba(0,255,179,0.06)",borderRadius:4,border:"1px solid rgba(0,255,179,0.2)"}}>
                 <div>
-                  <div style={{fontSize:13,color:"#445566",letterSpacing:"0.15em"}}>{t.groupCode}</div>
+                  <div style={{fontSize:10,color:"#445566",letterSpacing:"0.15em"}}>{t.groupCode}</div>
                   <div style={{fontSize:20,fontWeight:900,color:"#00ffb3",fontFamily:"monospace",letterSpacing:"0.2em"}}>{friendGroup.code}</div>
-                  <div style={{fontSize:14,color:"#445566"}}>{friendGroup.members?.length||1} {t.members}: {(friendGroup.members||[]).join(", ")}</div>
+                  <div style={{fontSize:11,color:"#445566"}}>{friendGroup.members?.length||1} {t.members}: {(friendGroup.members||[]).join(", ")}</div>
                 </div>
               </div>
               <button style={{...S.btn("g"),marginBottom:4}} onClick={()=>{navigator.clipboard?.writeText(t.inviteText(friendGroup.code));}}>
                 {t.copyCode}
               </button>
-              <button style={{...S.btn("g"),fontSize:14,opacity:0.5,marginBottom:12}} onClick={()=>{setFriendGroup(null);ls.set("geowatch:friendgroup",null);}}>
+              <button style={{...S.btn("g"),fontSize:11,opacity:0.5,marginBottom:12}} onClick={()=>{setFriendGroup(null);ls.set("geowatch:friendgroup",null);}}>
                 {lang==="de"?"Gruppe verlassen":"Leave Group"}
               </button>
               {friendsLBLoad ? (
@@ -2277,7 +2263,7 @@ export default function GeoWatch() {
                     setFriendsLBLoad(true);
                     const d=await db.loadFriendsLB(friendGroup.members||[username]);
                     setFriendsLBData(d); setFriendsLBLoad(false);
-                  }}>{lang==="de"?"ðŸ”„ LADEN":"ðŸ”„ LOAD"}</button>
+                  }}>{lang==="de"?"🔄 LADEN":"🔄 LOAD"}</button>
                   {["five","ten","fifteen","twenty"].map((key,i)=>{
                     const labels=[t.fiveRounds,t.tenRounds,t.fifteenRounds,t.twentyRounds];
                     return friendsLBData[key]?.length>0&&(
@@ -2304,6 +2290,3 @@ export default function GeoWatch() {
 
   return <div style={{ color:"#00ffb3", padding:40 }}>{t.loading}</div>;
 }
-
-
-
