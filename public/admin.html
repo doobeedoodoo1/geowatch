@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GeoWatch Admin Dashboard</title>
+  <meta name="robots" content="noindex, nofollow"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #00ffb3; --blue: #00c8ff; --yellow: #ffcc00;
+      --red: #ff4455; --purple: #b464ff;
+      --bg: #07080d; --card: #0d1117; --card2: #111820;
+      --border: rgba(0,255,179,0.15); --text: #c8d0d8; --muted: #445566;
+      --mono: 'Courier New', Courier, monospace;
+      --sans: 'Inter', system-ui, sans-serif;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.6; min-height: 100vh; }
+    body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:9999; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,180,.012) 2px,rgba(0,255,180,.012) 4px); }
+
+    /* ── LOGIN ── */
+    #login-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+    .login-box { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:40px; width:320px; text-align:center; }
+    .login-box .logo { font-family:var(--mono); font-size:20px; font-weight:900; color:var(--green); text-shadow:0 0 20px rgba(0,255,179,.5); letter-spacing:.15em; margin-bottom:6px; }
+    .login-box p { font-size:13px; color:var(--muted); margin-bottom:24px; }
+    .login-box input { width:100%; background:rgba(0,255,179,.05); border:1px solid var(--border); border-radius:4px; color:var(--text); padding:12px 14px; font-size:15px; outline:none; margin-bottom:12px; font-family:var(--mono); letter-spacing:.15em; text-align:center; }
+    .login-box input:focus { border-color:var(--green); }
+    .login-box button { width:100%; background:linear-gradient(135deg,var(--green),var(--blue)); color:#07080d; font-family:var(--mono); font-weight:900; font-size:13px; letter-spacing:.15em; padding:12px; border:none; border-radius:4px; cursor:pointer; }
+    .login-err { font-size:12px; color:var(--red); margin-top:8px; display:none; }
+
+    /* ── DASHBOARD ── */
+    #dashboard { display:none; }
+    header { background:rgba(7,8,13,.95); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); padding:16px 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+    .logo { font-family:var(--mono); font-size:20px; font-weight:900; color:var(--green); text-shadow:0 0 16px rgba(0,255,179,.5); letter-spacing:.15em; }
+    .logo span { font-size:11px; color:var(--muted); display:block; letter-spacing:.2em; margin-top:-2px; }
+    .header-right { display:flex; align-items:center; gap:16px; }
+    .live-dot { width:8px; height:8px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; display:inline-block; margin-right:6px; }
+    @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,179,.4)} 50%{opacity:.8;box-shadow:0 0 0 6px rgba(0,255,179,0)} }
+    .refresh-btn { background:transparent; border:1px solid var(--border); color:var(--green); font-family:var(--mono); font-size:11px; letter-spacing:.1em; padding:7px 14px; border-radius:4px; cursor:pointer; }
+    .refresh-btn:hover { background:rgba(0,255,179,.06); }
+    .last-update { font-size:11px; color:var(--muted); font-family:var(--mono); }
+    .logout-btn { background:transparent; border:1px solid rgba(255,68,85,.3); color:#ff8899; font-family:var(--mono); font-size:11px; padding:6px 12px; border-radius:4px; cursor:pointer; }
+
+    main { max-width:1200px; margin:0 auto; padding:28px 24px; display:flex; flex-direction:column; gap:24px; }
+
+    /* ── LIVE BANNER ── */
+    .live-banner { background:linear-gradient(135deg,rgba(0,255,179,.07),rgba(0,200,255,.05)); border:1px solid rgba(0,255,179,.25); border-radius:8px; padding:20px 28px; display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:20px; }
+    .live-stat { text-align:center; }
+    .live-stat .val { font-family:var(--mono); font-size:36px; font-weight:900; color:var(--green); display:block; text-shadow:0 0 20px rgba(0,255,179,.4); }
+    .live-stat .val.yellow { color:var(--yellow); text-shadow:0 0 20px rgba(255,204,0,.4); }
+    .live-stat .val.blue { color:var(--blue); text-shadow:0 0 20px rgba(0,200,255,.3); }
+    .live-stat .lbl { font-size:11px; color:var(--muted); letter-spacing:.15em; text-transform:uppercase; margin-top:4px; }
+
+    /* ── GRID ── */
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; }
+    @media(max-width:900px) { .grid2,.grid3 { grid-template-columns:1fr 1fr; } }
+    @media(max-width:600px) { .grid2,.grid3 { grid-template-columns:1fr; } }
+
+    /* ── CARDS ── */
+    .card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:22px; }
+    .card-title { font-size:11px; color:var(--muted); letter-spacing:.2em; text-transform:uppercase; margin-bottom:16px; font-family:var(--mono); display:flex; align-items:center; gap:8px; }
+    .card-title::before { content:'◈'; color:var(--green); }
+
+    /* ── STAT ROW ── */
+    .stat-row { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+    .stat-row:last-child { border-bottom:none; }
+    .stat-row .slabel { font-size:13px; color:var(--muted); }
+    .stat-row .sval { font-family:var(--mono); font-size:14px; font-weight:900; color:var(--text); }
+    .stat-row .sval.green { color:var(--green); }
+    .stat-row .sval.yellow { color:var(--yellow); }
+    .stat-row .sval.blue { color:var(--blue); }
+
+    /* ── BAR CHART ── */
+    .bar-chart { display:flex; flex-direction:column; gap:10px; }
+    .bar-row { display:flex; flex-direction:column; gap:4px; }
+    .bar-label { display:flex; justify-content:space-between; font-size:12px; }
+    .bar-label .bl { color:var(--muted); }
+    .bar-label .bv { font-family:var(--mono); color:var(--text); }
+    .bar-track { height:6px; background:rgba(255,255,255,.06); border-radius:3px; overflow:hidden; }
+    .bar-fill { height:100%; border-radius:3px; transition:width .6s ease; }
+
+    /* ── RANKING ── */
+    .rank-row { display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(255,255,255,.02); border-radius:5px; border:1px solid rgba(255,255,255,.05); margin-bottom:6px; }
+    .rank-row:first-child { background:rgba(255,204,0,.07); border-color:rgba(255,204,0,.3); }
+    .rank-num { font-family:var(--mono); font-weight:900; font-size:14px; width:24px; flex-shrink:0; }
+    .rank-name { flex:1; font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .rank-sub { font-size:11px; color:var(--muted); }
+    .rank-score { font-family:var(--mono); font-weight:900; font-size:14px; color:var(--green); flex-shrink:0; }
+
+    /* ── ACTIVITY ── */
+    .activity-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+    .activity-row:last-child { border-bottom:none; }
+    .act-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+    .act-name { flex:1; font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .act-mode { font-size:11px; padding:1px 7px; border-radius:3px; font-family:var(--mono); flex-shrink:0; }
+    .act-score { font-family:var(--mono); font-size:13px; font-weight:900; color:var(--green); flex-shrink:0; min-width:60px; text-align:right; }
+    .act-time { font-size:11px; color:var(--muted); flex-shrink:0; min-width:70px; text-align:right; }
+
+    /* ── LOADING ── */
+    .loading { text-align:center; color:var(--muted); font-family:var(--mono); font-size:13px; letter-spacing:.15em; padding:40px; }
+    .error-box { background:rgba(255,68,85,.08); border:1px solid rgba(255,68,85,.3); border-radius:6px; padding:14px; font-size:13px; color:#ff8899; }
+  </style>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="logo">GEOWATCH</div>
+    <p>Admin Dashboard</p>
+    <input type="password" id="pwd-input" placeholder="Passwort" onkeydown="if(event.key==='Enter')tryLogin()"/>
+    <button onclick="tryLogin()">▶ EINLOGGEN</button>
+    <div class="login-err" id="login-err">Falsches Passwort.</div>
+  </div>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div id="dashboard">
+  <header>
+    <div class="logo">GEOWATCH <span>ADMIN DASHBOARD</span></div>
+    <div class="header-right">
+      <span style="font-size:12px;color:var(--muted)"><span class="live-dot"></span>Live</span>
+      <span class="last-update" id="last-update">–</span>
+      <button class="refresh-btn" onclick="loadStats()">⟳ REFRESH</button>
+      <button class="logout-btn" onclick="logout()">LOGOUT</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="error-area"></div>
+
+    <!-- LIVE BANNER -->
+    <div class="live-banner">
+      <div class="live-stat">
+        <span class="val yellow" id="s-online">–</span>
+        <div class="lbl">🟢 Spieler online (30 Min)</div>
+      </div>
+      <div class="live-stat">
+        <span class="val blue" id="s-1h">–</span>
+        <div class="lbl">Aktiv letzte Stunde</div>
+      </div>
+      <div class="live-stat">
+        <span class="val" id="s-today">–</span>
+        <div class="lbl">Spiele heute</div>
+      </div>
+      <div class="live-stat">
+        <span class="val" id="s-players">–</span>
+        <div class="lbl">Spieler gesamt (Alltime)</div>
+      </div>
+    </div>
+
+    <!-- ROW 1: Gesamtstatistiken + Spielmodi -->
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Gesamtstatistiken</div>
+        <div class="stat-row"><span class="slabel">Spiele gesamt</span><span class="sval green" id="s-total-games">–</span></div>
+        <div class="stat-row"><span class="slabel">Standard-Spiele</span><span class="sval" id="s-std">–</span></div>
+        <div class="stat-row"><span class="slabel">Time Attack-Spiele</span><span class="sval blue" id="s-ta">–</span></div>
+        <div class="stat-row"><span class="slabel">Daily Challenge-Spiele</span><span class="sval yellow" id="s-daily">–</span></div>
+        <div class="stat-row"><span class="slabel">Ø Score (Standard)</span><span class="sval" id="s-avg">–</span></div>
+        <div class="stat-row"><span class="slabel">Höchstscore aller Zeiten</span><span class="sval green" id="s-max">–</span></div>
+        <div class="stat-row"><span class="slabel">Fun Facts gecacht</span><span class="sval" id="s-facts">–</span></div>
+        <div class="stat-row"><span class="slabel">Freundesgruppen</span><span class="sval" id="s-groups">–</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Spiele nach Rundenanzahl</div>
+        <div id="rounds-chart" class="bar-chart"><div class="loading">Lade...</div></div>
+      </div>
+    </div>
+
+    <!-- ROW 2: Aktivität 7 Tage + Top Spieler -->
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Spiele letzte 7 Tage</div>
+        <div id="days-chart" class="bar-chart"><div class="loading">Lade...</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Top 5 Alltime Spieler</div>
+        <div id="top5-list"><div class="loading">Lade...</div></div>
+      </div>
+    </div>
+
+    <!-- ROW 3: Letzte Aktivität -->
+    <div class="card">
+      <div class="card-title">Letzte 10 Spiele (Live-Feed)</div>
+      <div id="recent-list"><div class="loading">Lade...</div></div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── CONFIG ──
+const SUPABASE_URL = 'https://muaquiygkhdqvkkglgau.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11YXF1aXlna2hkcXZra2dsZ2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDM5MjMsImV4cCI6MjA5NTQ3OTkyM30.v3A6VDEoY65kExX2CUP0wYNhAqIHLlHL2gj_BaWLTKU';
+const PASSWORD     = 'GeoWatch2026!';
+const REFRESH_MS   = 30000;
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let refreshTimer = null;
+
+// ── AUTH ──
+function tryLogin() {
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd === PASSWORD) {
+    sessionStorage.setItem('gw-admin', '1');
+    showDashboard();
+  } else {
+    document.getElementById('login-err').style.display = 'block';
+  }
+}
+function logout() {
+  sessionStorage.removeItem('gw-admin');
+  clearInterval(refreshTimer);
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+function showDashboard() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  loadStats();
+  refreshTimer = setInterval(loadStats, REFRESH_MS);
+}
+if (sessionStorage.getItem('gw-admin') === '1') showDashboard();
+
+// ── HELPERS ──
+const $ = id => document.getElementById(id);
+const fmt = n => n == null ? '–' : Number(n).toLocaleString('de-DE');
+const fmtTime = iso => {
+  if (!iso) return '–';
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 60000);
+  if (diff < 1) return 'gerade eben';
+  if (diff < 60) return `vor ${diff} Min`;
+  if (diff < 1440) return `vor ${Math.floor(diff/60)} Std`;
+  return d.toLocaleDateString('de-DE');
+};
+const modeColor = m => m==='standard'?'#00ffb3':m==='timeattack'?'#00c8ff':m==='daily'?'#ffcc00':'#b464ff';
+const modeLabel = m => m==='standard'?'STD':m==='timeattack'?'TIME':m==='daily'?'DAILY':'–';
+const rankSymbol = i => i===0?'◈':i===1?'◇':i===2?'◆':`${i+1}.`;
+const rankColor  = i => i===0?'#ffcc00':i===1?'#aaaacc':i===2?'#cc8866':'#445566';
+
+function barHtml(label, value, max, color='#00ffb3') {
+  const pct = max > 0 ? Math.round(value / max * 100) : 0;
+  return `
+    <div class="bar-row">
+      <div class="bar-label">
+        <span class="bl">${label}</span>
+        <span class="bv">${fmt(value)}</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${pct}%;background:${color}"></div>
+      </div>
+    </div>`;
+}
+
+// ── LOAD DATA ──
+async function loadStats() {
+  $('error-area').innerHTML = '';
+  try {
+    const { data, error } = await sb.rpc('admin_dashboard_stats');
+    if (error) throw error;
+
+    const s = data;
+
+    // Live banner
+    $('s-online').textContent  = fmt(s.players_last_30min);
+    $('s-1h').textContent      = fmt(s.players_last_1h);
+    $('s-today').textContent   = fmt(s.games_today);
+    $('s-players').textContent = fmt(s.total_players);
+
+    // Stats card
+    const totalGames = (s.games_standard||0) + (s.games_timeattack||0) + (s.games_daily||0);
+    $('s-total-games').textContent = fmt(totalGames);
+    $('s-std').textContent  = fmt(s.games_standard);
+    $('s-ta').textContent   = fmt(s.games_timeattack);
+    $('s-daily').textContent= fmt(s.games_daily);
+    $('s-avg').textContent  = s.avg_score ? fmt(s.avg_score) + ' Pkt' : '–';
+    $('s-max').textContent  = s.max_score ? fmt(s.max_score) + ' Pkt' : '–';
+    $('s-facts').textContent= fmt(s.funfacts_cached);
+    $('s-groups').textContent= fmt(s.friend_groups);
+
+    // Rounds distribution chart
+    if (s.rounds_dist) {
+      const maxC = Math.max(...s.rounds_dist.map(x=>x.c));
+      const colors = {5:'#00ffb3',10:'#00c8ff',15:'#b464ff',20:'#ffcc00'};
+      $('rounds-chart').innerHTML = s.rounds_dist.map(x =>
+        barHtml(`${x.r} Runden`, x.c, maxC, colors[x.r]||'#00ffb3')
+      ).join('');
+    } else {
+      $('rounds-chart').innerHTML = '<p style="color:var(--muted);font-size:13px">Keine Daten</p>';
+    }
+
+    // 7-day chart
+    if (s.games_7d) {
+      const maxD = Math.max(...s.games_7d.map(x=>x.c));
+      const dayNames = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+      $('days-chart').innerHTML = s.games_7d.map(x => {
+        const day = new Date(x.d);
+        const label = `${dayNames[day.getDay()]} ${day.getDate()}.${day.getMonth()+1}.`;
+        return barHtml(label, x.c, maxD, '#00ffb3');
+      }).join('');
+      if (s.games_7d.length === 0) $('days-chart').innerHTML = '<p style="color:var(--muted);font-size:13px">Noch keine Spiele diese Woche</p>';
+    }
+
+    // Top 5
+    if (s.top5) {
+      $('top5-list').innerHTML = s.top5.map((p,i) => `
+        <div class="rank-row">
+          <span class="rank-num" style="color:${rankColor(i)}">${rankSymbol(i)}</span>
+          <div style="flex:1;min-width:0">
+            <div class="rank-name">${p.name}</div>
+            <div class="rank-sub">${fmt(p.games)} Spiele</div>
+          </div>
+          <span class="rank-score">${fmt(p.total)}</span>
+        </div>`).join('');
+    }
+
+    // Recent 10
+    if (s.recent10) {
+      $('recent-list').innerHTML = `
+        <div style="display:grid;grid-template-columns:6px 1fr auto auto auto;gap:0 12px;align-items:center">
+          ${s.recent10.map(r => `
+            <div class="act-dot" style="background:${modeColor(r.mode)}"></div>
+            <div class="act-name">${r.name || '–'}</div>
+            <div class="act-mode" style="color:${modeColor(r.mode)};border:1px solid ${modeColor(r.mode)}33;background:${modeColor(r.mode)}11">${modeLabel(r.mode)}</div>
+            <div class="act-score">${fmt(r.score)}</div>
+            <div class="act-time">${fmtTime(r.t)}</div>
+          `).join('')}
+        </div>`;
+    }
+
+    $('last-update').textContent = 'Aktualisiert: ' + new Date().toLocaleTimeString('de-DE');
+
+  } catch (err) {
+    $('error-area').innerHTML = `<div class="error-box">⚠ Fehler beim Laden: ${err.message}<br><small>Stelle sicher dass die SQL-Funktion <code>admin_dashboard_stats()</code> in Supabase erstellt wurde.</small></div>`;
+  }
+}
+</script>
+</body>
+</html>
