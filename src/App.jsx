@@ -1058,12 +1058,23 @@ export default function GeoWatch() {
     return () => clearInterval(id);
   }, []);
 
-  // ── DAILY PLAYER COUNT ────────────────────────────────────────────────────
+  // ── DAILY PLAYER COUNT + LB REFRESH ─────────────────────────────────────
   useEffect(() => {
-    if (screen !== "home") return;
     const today = new Date().toISOString().slice(0, 10);
-    db.loadDailyLB(today).then(lb => setDailyCount(lb.length));
-  }, [screen]);
+    if (screen === "home") {
+      db.loadDailyLB(today).then(lb => setDailyCount(lb.length));
+    }
+    if (screen === "daily-result") {
+      // Immer frisch laden wenn Ergebnis-Screen geöffnet wird
+      db.loadDailyLB(today).then(lb => {
+        setDailyLB(lb);
+        if (dailyResult) {
+          const myIdx = lb.findIndex(e => e.name === username.trim() && e.score === dailyResult.score);
+          setDailyResult(prev => prev ? { ...prev, rank: myIdx >= 0 ? myIdx + 1 : lb.length, total: lb.length } : prev);
+        }
+      });
+    }
+  }, [screen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── CAM-BILD laden/refreshen ─────────────────────────────────────────────
   useEffect(() => {
@@ -1320,7 +1331,6 @@ export default function GeoWatch() {
           await db.addDailyScore({ name: username, score: finalScore, date: today });
           ls.set("geowatch:daily:" + today, { played: true, score: finalScore });
           const lb = await db.loadDailyLB(today);
-          console.log("Daily LB after save:", lb);
           setDailyLB(lb);
           const myIdx = lb.findIndex(e => e.name === username.trim() && e.score === finalScore);
           setDailyResult({ score: finalScore, rank: myIdx >= 0 ? myIdx + 1 : lb.length, total: lb.length });
@@ -1632,11 +1642,27 @@ export default function GeoWatch() {
               <div style={{ fontSize:11, color:"#ffcc00", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace", marginBottom:4 }}>🌍 {t.dailyChallenge}</div>
               <div style={{ fontSize:12, color:"#6677aa", marginBottom:10 }}>{dateLabel} · {t.dailySubtitle(dailyCount)}</div>
               {played?.played ? (
-                <div style={{ fontSize:13, color:"#ffcc00" }}>
-                  ✓ {t.alreadyPlayed} · {t.yourScore}: {played.score.toLocaleString()}
-                  <div style={{ fontSize:11, color:"#6677aa", marginTop:4 }}>
-                    {lang === "de" ? "Morgen gibt es eine neue Challenge." : "Come back tomorrow for a new challenge."}
+                <div>
+                  <div style={{ fontSize:13, color:"#ffcc00", marginBottom:8 }}>
+                    ✓ {t.alreadyPlayed} · {t.yourScore}: {played.score.toLocaleString()}
+                    <div style={{ fontSize:11, color:"#6677aa", marginTop:4 }}>
+                      {lang === "de" ? "Morgen gibt es eine neue Challenge." : "Come back tomorrow for a new challenge."}
+                    </div>
                   </div>
+                  <button
+                    style={{ ...S.btn("g"), width:"100%", fontSize:13, borderColor:"rgba(255,204,0,0.4)", color:"#ffcc00" }}
+                    onClick={() => {
+                      const today = new Date().toISOString().slice(0, 10);
+                      setDailyResult({ score: played.score, rank: 1, total: 1 });
+                      db.loadDailyLB(today).then(lb => {
+                        setDailyLB(lb);
+                        const myIdx = lb.findIndex(e => e.name === username.trim() && e.score === played.score);
+                        setDailyResult({ score: played.score, rank: myIdx >= 0 ? myIdx + 1 : lb.length, total: lb.length });
+                      });
+                      setScreen("daily-result");
+                    }}>
+                    📊 {lang === "de" ? "Tagesrangliste ansehen" : "View today's ranking"}
+                  </button>
                 </div>
               ) : (
                 <button
