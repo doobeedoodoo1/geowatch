@@ -891,7 +891,7 @@ const randOrigin = () => `${20 + Math.floor(Math.random() * 60)}% ${20 + Math.fl
 // ══════════════════════════════════════════════════════════════════════════════
 export default function GeoWatch() {
   const [screen,        setScreen]       = useState("boot");
-  const [lang,          setLang]         = useState("en");
+  const [lang,          setLang]         = useState(() => localStorage.getItem("gw-lang") || "de");
   const [apiInput,      setApiInput]     = useState("");
   const [apiError,      setApiError]     = useState("");
   const [loadProg,      setLoadProg]     = useState([0, 15]);
@@ -1271,6 +1271,9 @@ export default function GeoWatch() {
 
   const startDailyChallenge = useCallback(() => {
     if (!pool.length) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const played = ls.get("geowatch:daily:" + today);
+    if (played?.played) return; // bereits heute gespielt — kein Neustart
     const seq = getDailySequence(pool);
     setIsDailyChallenge(true);
     setGameRounds(5);
@@ -1448,8 +1451,8 @@ export default function GeoWatch() {
 
   const LangSwitch = () => (
     <div style={{ display:"flex", gap:4 }}>
-      <button style={S.langBtn(lang==="en")} onClick={() => setLang("en")}>EN</button>
-      <button style={S.langBtn(lang==="de")} onClick={() => setLang("de")}>DE</button>
+      <button style={S.langBtn(lang==="en")} onClick={() => { setLang("en"); localStorage.setItem("gw-lang","en"); }}>EN</button>
+      <button style={S.langBtn(lang==="de")} onClick={() => { setLang("de"); localStorage.setItem("gw-lang","de"); }}>DE</button>
     </div>
   );
 
@@ -1628,8 +1631,13 @@ export default function GeoWatch() {
             <div style={{ border:"1px solid rgba(255,204,0,0.35)", borderRadius:6, padding:"14px 16px", background:"rgba(255,204,0,0.04)" }}>
               <div style={{ fontSize:11, color:"#ffcc00", letterSpacing:"0.15em", fontFamily:"'Courier New',Courier,monospace", marginBottom:4 }}>🌍 {t.dailyChallenge}</div>
               <div style={{ fontSize:12, color:"#6677aa", marginBottom:10 }}>{dateLabel} · {t.dailySubtitle(dailyCount)}</div>
-              {played ? (
-                <div style={{ fontSize:13, color:"#ffcc00" }}>✓ {t.alreadyPlayed} · {t.yourScore}: {played.score.toLocaleString()}</div>
+              {played?.played ? (
+                <div style={{ fontSize:13, color:"#ffcc00" }}>
+                  ✓ {t.alreadyPlayed} · {t.yourScore}: {played.score.toLocaleString()}
+                  <div style={{ fontSize:11, color:"#6677aa", marginTop:4 }}>
+                    {lang === "de" ? "Morgen gibt es eine neue Challenge." : "Come back tomorrow for a new challenge."}
+                  </div>
+                </div>
               ) : (
                 <button
                   style={{ ...S.btn("p"), width:"100%", background:"linear-gradient(135deg,#ffcc00,#ff9900)", color:"#07080d", opacity:camLoading?0.4:1 }}
