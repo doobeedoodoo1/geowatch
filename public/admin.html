@@ -184,10 +184,37 @@
       </div>
     </div>
 
-    <!-- ROW 3: Letzte Aktivität -->
+    <!-- ROW 3: Beliebteste Modi + Uhrzeiten -->
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Beliebteste Spielmodi</div>
+        <div id="mode-chart" class="bar-chart"><div class="loading">Lade...</div></div>
+        <div style="margin-top:20px">
+          <div class="card-title" style="margin-bottom:12px">Rundenauswahl (Standard)</div>
+          <div id="rounds-share-chart" class="bar-chart"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Spielzeiten (Uhr, MEZ)</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px;margin-top:-8px">Alle Spiele nach Uhrzeit (Europe/Berlin)</div>
+        <div id="hours-chart"><div class="loading">Lade...</div></div>
+      </div>
+    </div>
+
+    <!-- ROW 4: Letzte Aktivität -->
     <div class="card">
       <div class="card-title">Letzte 10 Spiele (Live-Feed)</div>
       <div id="recent-list"><div class="loading">Lade...</div></div>
+    </div>
+
+    <!-- ROW 5: Regionen Hinweis -->
+    <div class="card" style="border-color:rgba(255,204,0,0.2);background:rgba(255,204,0,0.03)">
+      <div class="card-title" style="color:var(--yellow)">🌍 Spieler-Regionen</div>
+      <div style="font-size:14px;color:var(--muted);line-height:1.8">
+        Geographische Herkunft der Spieler wird aktuell nicht erfasst — dafür wäre eine IP-Geolokalisierung beim Speichern des Scores nötig.<br>
+        <strong style="color:var(--text)">Was bereits sichtbar ist:</strong> Die Uhrzeiten-Verteilung oben gibt indirekte Hinweise — z.B. deutet ein Spike um 20–22 Uhr MEZ auf europäische Spieler hin, um 14–16 Uhr MEZ auf amerikanische.
+      </div>
     </div>
   </main>
 </div>
@@ -293,6 +320,49 @@ async function loadStats() {
       ).join('');
     } else {
       $('rounds-chart').innerHTML = '<p style="color:var(--muted);font-size:13px">Keine Daten</p>';
+    }
+
+    // Mode popularity chart
+    if (s.mode_share) {
+      const ms = s.mode_share;
+      const total = (ms.standard||0) + (ms.timeattack||0) + (ms.daily||0);
+      const modeMax = Math.max(ms.standard||0, ms.timeattack||0, ms.daily||0);
+      $('mode-chart').innerHTML = [
+        barHtml('🎮 Standard',            ms.standard||0,   modeMax, '#00ffb3'),
+        barHtml('⏱ Zeitangriff',          ms.timeattack||0, modeMax, '#00c8ff'),
+        barHtml('🌍 Tägliche Challenge',  ms.daily||0,      modeMax, '#ffcc00'),
+      ].join('') + `<div style="margin-top:10px;font-size:12px;color:var(--muted)">Gesamt: ${fmt(total)} Spiele</div>`;
+    }
+
+    // Rounds share inside mode card
+    if (s.rounds_share) {
+      const rmax = Math.max(...s.rounds_share.map(x=>x.c));
+      const rc = {5:'#00ffb3',10:'#00c8ff',15:'#b464ff',20:'#ffcc00'};
+      $('rounds-share-chart').innerHTML = s.rounds_share.map(x =>
+        barHtml(`${x.r} Runden`, x.c, rmax, rc[x.r]||'#00ffb3')
+      ).join('');
+    }
+
+    // Hourly chart (0-23)
+    if (s.games_by_hour) {
+      const hourMap = {};
+      s.games_by_hour.forEach(x => { hourMap[x.h] = x.c; });
+      const maxH = Math.max(...Object.values(hourMap), 1);
+      // Group into blocks for readability
+      const blocks = [];
+      for (let h = 0; h < 24; h += 3) {
+        const cnt = (hourMap[h]||0) + (hourMap[h+1]||0) + (hourMap[h+2]||0);
+        const label = `${String(h).padStart(2,'0')}–${String(h+3).padStart(2,'0')} Uhr`;
+        // Color by time of day
+        const col = h >= 6 && h < 12 ? '#ffcc00' : h >= 12 && h < 18 ? '#00ffb3' : h >= 18 && h < 22 ? '#00c8ff' : '#445566';
+        blocks.push(barHtml(label, cnt, maxH * 3, col));
+      }
+      $('hours-chart').innerHTML = blocks.join('');
+      // Peak time
+      const peakH = s.games_by_hour.reduce((a,b) => b.c > a.c ? b : a, {h:0,c:0});
+      $('hours-chart').innerHTML += `<div style="margin-top:10px;font-size:12px;color:var(--muted)">📈 Spitzenzeit: <strong style="color:var(--text)">${String(peakH.h).padStart(2,'0')}:00 Uhr</strong> (${fmt(peakH.c)} Spiele)</div>`;
+    } else {
+      $('hours-chart').innerHTML = '<p style="color:var(--muted);font-size:13px">Keine Daten</p>';
     }
 
     // 7-day chart
