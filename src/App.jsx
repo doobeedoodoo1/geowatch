@@ -1951,20 +1951,37 @@ export default function GeoWatch() {
                   <div style={S.div} />
                   <div style={S.stitle}>{t.byContinent}</div>
                   <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                    {Object.entries(st.continentStats).sort((a,b) => b[1].total - a[1].total).map(([cont, data]) => {
-                      const pct = data.total > 0 ? Math.round(data.correct / data.total * 100) : 0;
-                      return (
-                        <div key={cont}>
-                          <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
-                            <span style={{ color:"#c8d0d8" }}>{contName(cont, lang)}</span>
-                            <span style={{ color:"#6677aa" }}>{pct}% &nbsp;({data.correct}/{data.total})</span>
-                          </div>
-                          <div style={{ height:5, background:"#1a1f2e", borderRadius:3, overflow:"hidden" }}>
-                            <div style={{ height:"100%", width:`${pct}%`, background:"linear-gradient(90deg,#00ffb3,#00c8ff)", borderRadius:3, transition:"width 0.4s" }} />
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {(() => {
+                      // Alle bekannten englischen Vollnamen → Code-Map
+                      const nameToCode = {};
+                      Object.entries(CONTINENT_NAMES.en).forEach(([code, name]) => { nameToCode[name] = code; });
+                      // Auch deutsche Namen mappen
+                      Object.entries(CONTINENT_NAMES.de).forEach(([code, name]) => { nameToCode[name] = code; });
+                      // Alte Einträge (voller Name) + neue (Code) zusammenführen
+                      const merged = {};
+                      Object.entries(st.continentStats).forEach(([cont, data]) => {
+                        const code = nameToCode[cont] || cont;
+                        if (!merged[code]) merged[code] = { correct:0, total:0 };
+                        merged[code].correct += data.correct;
+                        merged[code].total   += data.total;
+                      });
+                      return Object.entries(merged)
+                        .sort((a,b) => b[1].total - a[1].total)
+                        .map(([cont, data]) => {
+                          const pct = data.total > 0 ? Math.round(data.correct / data.total * 100) : 0;
+                          return (
+                            <div key={cont}>
+                              <div style={{ display:"flex", justifyContent:"space-between", fontSize:15, marginBottom:4 }}>
+                                <span style={{ color:"#c8d0d8" }}>{contName(cont, lang)}</span>
+                                <span style={{ color:"#6677aa" }}>{pct}%&nbsp;({data.correct}/{data.total})</span>
+                              </div>
+                              <div style={{ height:5, background:"#1a1f2e", borderRadius:3, overflow:"hidden" }}>
+                                <div style={{ height:"100%", width:`${pct}%`, background:"linear-gradient(90deg,#00ffb3,#00c8ff)", borderRadius:3, transition:"width 0.4s" }} />
+                              </div>
+                            </div>
+                          );
+                        });
+                    })()}
                   </div>
                 </>
               )}
