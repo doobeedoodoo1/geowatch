@@ -433,6 +433,23 @@
       padding: 6px 14px; border-radius: 20px;
     }
 
+    /* ── COMPARISON TABLE ── */
+    .cmp-table { width:100%; border-collapse:collapse; font-size:14px; min-width:700px; }
+    .cmp-table th, .cmp-table td { padding:11px 14px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.06); white-space:nowrap; }
+    .cmp-table th { font-size:12px; letter-spacing:0.1em; color:var(--muted); font-weight:700; background:rgba(255,255,255,0.03); border-bottom:1px solid var(--border); }
+    .cmp-feature { text-align:left !important; color:var(--text); font-weight:500; white-space:normal !important; min-width:160px; }
+    .cmp-table thead th.cmp-feature { color:var(--muted); }
+    /* GeoWatch column highlight */
+    .cmp-geowatch { background:rgba(0,255,179,0.06) !important; border-left:2px solid rgba(0,255,179,0.4); border-right:2px solid rgba(0,255,179,0.4); }
+    .cmp-table thead th.cmp-geowatch { color:var(--green) !important; font-size:13px; border-top:2px solid rgba(0,255,179,0.4); }
+    .cmp-table tbody tr:last-child td.cmp-geowatch { border-bottom:2px solid rgba(0,255,179,0.4); }
+    /* Cell states */
+    .cmp-yes  { color:#00ffb3; font-weight:600; }
+    .cmp-no   { color:#445566; }
+    .cmp-half { color:#ffcc00; }
+    .cmp-table tbody tr:hover td { background:rgba(255,255,255,0.02); }
+    .cmp-table tbody tr:hover td.cmp-geowatch { background:rgba(0,255,179,0.1) !important; }
+
     /* ── FINAL CTA ── */
     .final-cta {
       text-align: center; padding: 96px 0;
@@ -749,6 +766,173 @@
       <span class="kw">Geographie lernen</span>
       <span class="kw">Quiz ohne Anmeldung</span>
       <span class="kw">Weltgeographie Quiz</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── VERGLEICHSTABELLE ── -->
+<section id="vergleich">
+  <div class="container">
+    <span class="section-label">Warum GeoWatch?</span>
+    <h2>GeoWatch vs. die Konkurrenz</h2>
+    <p class="section-sub">Das einzige kostenlose Geographie-Quiz mit echten Live-Webcams — kein Account, kein Abo, kein Bullshit.</p>
+
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+      <table class="cmp-table">
+        <thead>
+          <tr>
+            <th class="cmp-feature">Feature</th>
+            <th class="cmp-geowatch">🌍 GeoWatch</th>
+            <th>GeoGuessr</th>
+            <th>Geotastic</th>
+            <th>Worldle</th>
+            <th>Globle</th>
+            <th>Seterra</th>
+            <th>Travle</th>
+            <th>MapCrunch</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="cmp-feature">Kostenlos spielen</td>
+            <td class="cmp-geowatch cmp-yes">✓ Voll kostenlos</td>
+            <td class="cmp-no">✗ 2,99 €/Mo.</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-half">~ Mit Werbung</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-yes">✓</td>
+          </tr>
+          <tr>
+            <td class="cmp-feature">Kein Account nötig</td>
+            <td class="cmp-geowatch cmp-yes">✓</td>
+            <td class="cmp-no">✗ Pflicht</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-yes">✓</td>
+          </tr>
+          <tr>
+            <td class="cmp-feature">Echte Live-Bilder</td>
+            <td class="cmp-geowatch cmp-yes">✓ 40.000+ Webcams</td>
+            <td class="cmp-half">~ Street View (alt)</td>
+            <td class="cmp-half">~ Street View</td>
+            <td class="cmp-no">✗ Nur Silhouetten</td>
+            <td class="cmp-no">✗ Nur Karte</td>
+            <td class="cmp-no">✗ Nur Karte</td>
+            <td class="cmp-no">✗ Kein Bild</td>
+            <td class="cmp-half">~ Street View</td>
+          </tr>
+          <tr>
+            <td class="cmp-feature">KI Fun Facts</td>
+            <td class="cmp-geowatch cmp-yes">✓ Nach jeder Runde</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+          </tr>
+          <tr>
+            <td class="cmp-feature">Tägliche Challenge</td>
+            <td class="cmp-geowatch cmp-yes">✓</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-no">✗</td>
+          </tr>
+          <tr>
+            <td class="cmp-feature">Duell-Modus</td>
+            <td class="cmp-geowatch cmp-yes">✓</td>
+            <td class="cmp-yes">✓ (Pro)</td>
+            <td class="cmp-yes">✓ Live-Lobby</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+          </tr>
+          <tr>
+            <td class="cmp-feature">Zeitangriff-Modus</td>
+            <td class="cmp-geowatch cmp-yes">✓</td>
+            <td class="cmp-half">~ Battle Royale (Pro)</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+          </tr>
+          <tr>
+            <td class="cmp-feature">Freundes-Rangliste</td>
+            <td class="cmp-geowatch cmp-yes">✓</td>
+            <td class="cmp-yes">✓ (Pro)</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+          </tr>
+          <tr>
+            <td class="cmp-feature">Regionen-Filter</td>
+            <td class="cmp-geowatch cmp-yes">✓ 6 Regionen</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+          </tr>
+          <tr>
+            <td class="cmp-feature">Persönliche Statistiken</td>
+            <td class="cmp-geowatch cmp-yes">✓ Tiefe Analyse</td>
+            <td class="cmp-yes">✓ (Pro)</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+          </tr>
+          <tr>
+            <td class="cmp-feature">Deutsch / Englisch</td>
+            <td class="cmp-geowatch cmp-yes">✓ Vollständig</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-half">~ Teilweise</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+          </tr>
+          <tr>
+            <td class="cmp-feature">Mobile App</td>
+            <td class="cmp-geowatch cmp-half">~ Browser (bald App)</td>
+            <td class="cmp-yes">✓ iOS &amp; Android</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-yes">✓</td>
+            <td class="cmp-no">✗</td>
+            <td class="cmp-no">✗</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:28px;text-align:center;">
+      <a class="btn-primary" href="/play" style="font-size:16px;padding:16px 36px;">
+        ▶ Jetzt kostenlos spielen — kein Account nötig
+      </a>
     </div>
   </div>
 </section>
