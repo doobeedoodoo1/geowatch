@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Primary SEO -->
+  <title>GeoWatch – Städte erraten aus echten Webcams | Kostenloses Geographie Quiz</title>
+  <meta name="description" content="Erkenne Städte aus echten Live-Webcam-Aufnahmen aus aller Welt. 40.000+ Kameras, Duell-Modus, KI-Fun Facts, Zeitangriff-Modus. Kostenlos, ohne Anmeldung – die beste GeoGuessr Alternative!" />
+  <meta name="keywords" content="Städte erraten, Geographie Quiz, Webcam Quiz, GeoGuessr Alternative kostenlos, Städte Quiz Online, Welt Quiz Spiel, Geographie Spiel kostenlos, welche Stadt ist das, Länder erraten, Geographie Spiel" />
+  <meta name="robots" content="index, follow" />
+  <meta name="author" content="GeoWatch" />
+  <link rel="canonical" href="https://geowatchgame.vercel.app/landing" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://geowatchgame.vercel.app/" />
+  <meta property="og:title" content="GeoWatch – Städte erraten aus echten Webcams" />
+  <meta property="og:description" content="Erkenne Städte aus echten Webcam-Aufnahmen aus aller Welt. 40.000+ Kameras, Duell-Modus, KI-Fun Facts. Kostenlos, ohne Anmeldung." />
+  <meta property="og:image" content="https://geowatchgame.vercel.app/og-image.png" />
+  <meta property="og:locale" content="de_DE" />
+  <meta property="og:site_name" content="GeoWatch" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="GeoWatch – Städte erraten aus echten Webcams" />
+  <meta name="twitter:description" content="Erkenne Städte aus echten Webcam-Aufnahmen. Kostenlos, ohne Anmeldung." />
+  <meta name="twitter:image" content="https://geowatchgame.vercel.app/og-image.png" />
+
+  <!-- JSON-LD: WebApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "GeoWatch",
+    "url": "https://geowatchgame.vercel.app",
+    "description": "Kostenloses Geographie-Ratespiel mit echten Webcam-Aufnahmen aus aller Welt. Erkenne Städte aus 40.000+ Live-Kameras.",
+    "applicationCategory": "GameApplication",
+    "genre": "Quiz",
+    "operatingSystem": "Web",
+    "inLanguage": ["de", "en"],
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "5",
+      "ratingCount": "1"
+    }
+  }
+  </script>
+
+  <!-- JSON-LD: FAQ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Was ist GeoWatch?",
+        "acceptedAnswer": { "@type": "Answer", "text": "GeoWatch ist ein kostenloses Geographie-Ratespiel im Browser. Du siehst echte Webcam-Aufnahmen aus aller Welt und musst die richtige Stadt aus 3 Antwortmöglichkeiten erraten – je schneller, desto mehr Punkte." }
+      },
+      {
+        "@type": "Question",
+        "name": "Ist GeoWatch kostenlos?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Ja, GeoWatch ist vollständig kostenlos und erfordert keine Anmeldung. Einfach den Link öffnen und sofort spielen." }
+      },
+      {
+        "@type": "Question",
+        "name": "Was ist der Unterschied zu GeoGuessr?",
+        "acceptedAnswer": { "@type": "Answer", "text": "GeoWatch ist kostenlos und ohne Anmeldung spielbar. Statt Street View werden echte Live-Webcam-Aufnahmen aus über 40.000 Kameras weltweit gezeigt. Zusätzlich gibt es KI-generierte Fun Facts, einen Zeitangriff-Modus und ein Freunde-Leaderboard." }
+      },
+      {
+        "@type": "Question",
+        "name": "Woher kommen die Kamerabilder?",
+        "acceptedAnswer": { "@type": "Answer", "text": "GeoWatch nutzt die Windy Webcams API mit über 40.000 echten Webcams weltweit. Alle Bilder sind aktuelle Tageslicht-Aufnahmen." }
+      },
+      {
+        "@type": "Question",
+        "name": "Wie funktioniert der Duell-Modus?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Erstelle ein Duell und erhalte einen 6-stelligen Code. Schicke den Code an einen Freund – er spielt dieselbe Kamera-Sequenz und ihr vergleicht eure Scores." }
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #00ffb3;
+      --blue:  #00c8ff;
+      --bg:    #07080d;
+      --card:  #0d1117;
+      --border: rgba(0,255,179,0.15);
+      --text:  #c8d0d8;
+      --muted: #556677;
+      --font-mono: 'Courier New', Courier, monospace;
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 17px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--green); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+    section { padding: 72px 0; }
+    section:nth-child(even) { background: rgba(0,255,179,0.02); }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(7,8,13,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 0;
+    }
+    nav .inner {
+      max-width: 900px; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo {
+      font-family: var(--font-mono);
+      font-size: 22px; font-weight: 900;
+      color: var(--green);
+      text-shadow: 0 0 20px rgba(0,255,179,0.5);
+      letter-spacing: 0.12em;
+    }
+    .nav-cta {
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      color: #07080d;
+      font-family: var(--font-mono);
+      font-weight: 900; font-size: 13px;
+      letter-spacing: 0.12em;
+      padding: 10px 20px; border-radius: 4px;
+      border: none; cursor: pointer;
+      transition: opacity 0.15s;
+      display: inline-block;
+    }
+    .nav-cta:hover { opacity: 0.85; text-decoration: none; }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 96px 0 80px;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-block;
+      padding: 5px 14px; border-radius: 20px;
+      background: rgba(0,255,179,0.1);
+      border: 1px solid rgba(0,255,179,0.3);
+      font-family: var(--font-mono);
+      font-size: 12px; color: var(--green);
+      letter-spacing: 0.18em;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 900;
+      line-height: 1.15;
+      color: #fff;
+      margin-bottom: 20px;
+      letter-spacing: -0.01em;
+    }
+    h1 span {
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: 19px;
+      color: var(--muted);
+      max-width: 620px;
+      margin: 0 auto 36px;
+      line-height: 1.7;
+    }
+    .hero-cta-group {
+      display: flex; gap: 12px;
+      justify-content: center; flex-wrap: wrap;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      color: #07080d;
+      font-family: var(--font-mono);
+      font-weight: 900; font-size: 15px;
+      letter-spacing: 0.12em;
+      padding: 15px 32px; border-radius: 4px;
+      display: inline-block; transition: opacity 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.85; text-decoration: none; }
+    .btn-secondary {
+      border: 1px solid rgba(0,255,179,0.4);
+      color: var(--green);
+      font-family: var(--font-mono);
+      font-weight: 700; font-size: 14px;
+      letter-spacing: 0.1em;
+      padding: 14px 28px; border-radius: 4px;
+      display: inline-block; transition: background 0.15s;
+    }
+    .btn-secondary:hover { background: rgba(0,255,179,0.06); text-decoration: none; }
+
+    .hero-stats {
+      display: flex; gap: 40px;
+      justify-content: center; flex-wrap: wrap;
+      margin-top: 56px;
+      padding-top: 40px;
+      border-top: 1px solid var(--border);
+    }
+    .stat { text-align: center; }
+    .stat-num {
+      font-family: var(--font-mono);
+      font-size: 32px; font-weight: 900;
+      color: var(--green);
+      display: block;
+    }
+    .stat-label { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    /* ── SECTION TITLES ── */
+    h2 {
+      font-size: clamp(24px, 3.5vw, 36px);
+      font-weight: 900; color: #fff;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 12px; color: var(--green);
+      letter-spacing: 0.2em; text-transform: uppercase;
+      margin-bottom: 8px; display: block;
+    }
+    .section-sub {
+      font-size: 17px; color: var(--muted);
+      margin-bottom: 48px; max-width: 580px;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; }
+    .step {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px; padding: 28px 24px;
+      position: relative;
+    }
+    .step-num {
+      font-family: var(--font-mono);
+      font-size: 11px; color: var(--green);
+      letter-spacing: 0.2em; margin-bottom: 12px;
+      display: block;
+    }
+    .step h3 { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .step p { font-size: 15px; color: var(--muted); line-height: 1.65; }
+
+    /* ── FEATURES ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+    .feature {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px; padding: 24px;
+      transition: border-color 0.2s;
+    }
+    .feature:hover { border-color: rgba(0,255,179,0.4); }
+    .feature-icon { font-size: 28px; margin-bottom: 12px; display: block; }
+    .feature h3 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .feature p { font-size: 14px; color: var(--muted); line-height: 1.65; }
+
+    /* ── GAME MODES ── */
+    .modes { display: flex; flex-direction: column; gap: 16px; }
+    .mode {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px; padding: 24px 28px;
+      display: flex; align-items: flex-start; gap: 20px;
+    }
+    .mode-icon {
+      font-size: 32px; flex-shrink: 0;
+      width: 52px; height: 52px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,255,179,0.07);
+      border-radius: 8px;
+    }
+    .mode-content h3 { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .mode-content p { font-size: 15px; color: var(--muted); }
+    .mode-tag {
+      display: inline-block;
+      background: rgba(0,255,179,0.1); border: 1px solid rgba(0,255,179,0.25);
+      color: var(--green); font-family: var(--font-mono);
+      font-size: 11px; letter-spacing: 0.12em;
+      padding: 2px 8px; border-radius: 3px;
+      margin-bottom: 6px;
+    }
+
+    /* ── SCORING ── */
+    .scoring-table {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden;
+      width: 100%;
+    }
+    .scoring-table tr { border-bottom: 1px solid rgba(0,255,179,0.07); }
+    .scoring-table tr:last-child { border-bottom: none; }
+    .scoring-table td { padding: 14px 20px; font-size: 15px; }
+    .scoring-table td:first-child {
+      font-family: var(--font-mono); font-weight: 900;
+      color: var(--green); width: 120px;
+    }
+    .scoring-table td:last-child { color: var(--muted); }
+
+    /* ── FAQ ── */
+    .faq { display: flex; flex-direction: column; gap: 8px; }
+    details {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden;
+    }
+    details[open] { border-color: rgba(0,255,179,0.35); }
+    summary {
+      padding: 18px 22px;
+      font-size: 16px; font-weight: 600; color: #fff;
+      cursor: pointer; list-style: none;
+      display: flex; align-items: center; justify-content: space-between;
+      user-select: none;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::after {
+      content: '+';
+      font-family: var(--font-mono); font-size: 20px;
+      color: var(--green); flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+    details[open] summary::after { transform: rotate(45deg); }
+    .faq-body { padding: 0 22px 18px; font-size: 15px; color: var(--muted); line-height: 1.75; }
+
+    /* ── KEYWORDS SECTION ── */
+    .keyword-cloud {
+      display: flex; flex-wrap: wrap; gap: 10px;
+    }
+    .kw {
+      background: rgba(0,200,255,0.06);
+      border: 1px solid rgba(0,200,255,0.2);
+      color: #7ab8d4; font-size: 14px;
+      padding: 6px 14px; border-radius: 20px;
+    }
+
+    /* ── FINAL CTA ── */
+    .final-cta {
+      text-align: center; padding: 96px 0;
+    }
+    .final-cta h2 { margin-bottom: 16px; }
+    .final-cta p { font-size: 18px; color: var(--muted); margin-bottom: 36px; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0; text-align: center;
+    }
+    footer p { font-size: 14px; color: var(--muted); }
+    footer a { color: var(--green); }
+
+    /* ── SCAN LINE ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 2px,
+        rgba(0,255,180,0.012) 2px, rgba(0,255,180,0.012) 4px
+      );
+    }
+
+    @media (max-width: 600px) {
+      .hero { padding: 64px 0 56px; }
+      .hero-stats { gap: 24px; }
+      .mode { flex-direction: column; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAVIGATION ── -->
+<nav>
+  <div class="inner">
+    <span class="logo">GEOWATCH</span>
+    <a class="nav-cta" href="https://geowatchgame.vercel.app/">▶ JETZT SPIELEN</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge">📡 40.000+ ECHTE WEBCAMS WELTWEIT</div>
+    <h1>Kannst du erraten,<br><span>wo diese Kamera steht?</span></h1>
+    <p class="hero-sub">
+      GeoWatch zeigt dir echte Webcam-Aufnahmen aus aller Welt — erkenne die Stadt aus 3 Optionen.
+      Das kostenlose Geographie-Quiz ohne Anmeldung.
+    </p>
+    <div class="hero-cta-group">
+      <a class="btn-primary" href="https://geowatchgame.vercel.app/">▶ KOSTENLOS SPIELEN</a>
+      <a class="btn-secondary" href="#features">Alle Features →</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat">
+        <span class="stat-num">40.000+</span>
+        <span class="stat-label">echte Webcams weltweit</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">7</span>
+        <span class="stat-label">Spielmodi</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">0 €</span>
+        <span class="stat-label">kostenlos &amp; ohne Anmeldung</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">DE/EN</span>
+        <span class="stat-label">zweisprachig</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section>
+  <div class="container">
+    <span class="section-label">So funktioniert's</span>
+    <h2>Städte erraten in 3 Schritten</h2>
+    <p class="section-sub">Kein Download, kein Account — einfach Link öffnen und sofort losspielen.</p>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">SCHRITT 01</span>
+        <h3>Webcam-Bild ansehen</h3>
+        <p>GeoWatch zeigt dir ein echtes Tageslicht-Snapshot einer Webcam irgendwo auf der Welt — ohne Ortsangabe.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">SCHRITT 02</span>
+        <h3>Stadt erraten</h3>
+        <p>Wähle die richtige Stadt aus 3 Optionen. Jede Option stammt aus einem anderen Land — keine Tricks.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">SCHRITT 03</span>
+        <h3>Punkte sammeln</h3>
+        <p>Je schneller du antwortest, desto mehr Punkte. Baue Serien auf, kaufe Hinweise und klettere im Leaderboard.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── GAME MODES ── -->
+<section id="features">
+  <div class="container">
+    <span class="section-label">Spielmodi</span>
+    <h2>Mehr als ein Quiz</h2>
+    <p class="section-sub">Sieben verschiedene Modi — vom schnellen 5-Runden-Spiel bis zum 3-Minuten-Zeitangriff.</p>
+    <div class="modes">
+      <div class="mode">
+        <div class="mode-icon">🎮</div>
+        <div class="mode-content">
+          <span class="mode-tag">KLASSISCH</span>
+          <h3>Standard-Modus — 5, 10, 15 oder 20 Runden</h3>
+          <p>Wähle deine Rundenzahl und erkenne so viele Städte wie möglich. Max. 1.000 Punkte pro Runde — 500 Basispunkte plus bis zu 500 Schnelligkeitsbonus.</p>
+        </div>
+      </div>
+      <div class="mode">
+        <div class="mode-icon">⏱</div>
+        <div class="mode-content">
+          <span class="mode-tag" style="color:#00c8ff;border-color:rgba(0,200,255,0.3);background:rgba(0,200,255,0.08)">ZEITANGRIFF</span>
+          <h3>Time Attack — so viele Runden wie möglich in 3 Minuten</h3>
+          <p>Kein Runden-Limit. Du hast 3 Minuten — pack so viele Runden wie möglich rein. Der globale Countdown läuft, jede Sekunde zählt.</p>
+        </div>
+      </div>
+      <div class="mode">
+        <div class="mode-icon">🖼</div>
+        <div class="mode-content">
+          <span class="mode-tag" style="color:#b464ff;border-color:rgba(180,100,255,0.3);background:rgba(180,100,255,0.08)">BILDVERGLEICH</span>
+          <h3>Photo Compare — welches Bild liegt in Europa?</h3>
+          <p>Zwei Webcam-Bilder nebeneinander. Deine Aufgabe: Tippe auf das Bild aus dem gesuchten Kontinent. Anders denken, schnell entscheiden.</p>
+        </div>
+      </div>
+      <div class="mode">
+        <div class="mode-icon">🌍</div>
+        <div class="mode-content">
+          <span class="mode-tag" style="color:#ffcc00;border-color:rgba(255,204,0,0.3);background:rgba(255,204,0,0.06)">TÄGLICH</span>
+          <h3>Daily Challenge — jeden Tag dieselben 5 Kameras für alle</h3>
+          <p>Täglich um Mitternacht gibt es 5 neue Kameras — weltweit für alle Spieler identisch. Vergleiche deinen Score im globalen Tagesranking.</p>
+        </div>
+      </div>
+      <div class="mode">
+        <div class="mode-icon">⚔️</div>
+        <div class="mode-content">
+          <span class="mode-tag">DUELL</span>
+          <h3>Duel Mode — fordere Freunde direkt heraus</h3>
+          <p>Erstelle ein Duell, erhalte einen 6-stelligen Code und schicke ihn an einen Freund. Ihr spielt dieselbe Sequenz — wer mehr Punkte hat, gewinnt.</p>
+        </div>
+      </div>
+      <div class="mode">
+        <div class="mode-icon">🔍</div>
+        <div class="mode-content">
+          <span class="mode-tag">ZOOM</span>
+          <h3>Zoom Mode — das Bild deckt sich langsam auf</h3>
+          <p>Das Bild startet stark hereingezoomt und zoomt über 30 Sekunden heraus. Frühes Raten bringt maximale Punkte — aber das Bild ist noch kaum erkennbar.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURES GRID ── -->
+<section>
+  <div class="container">
+    <span class="section-label">Features</span>
+    <h2>Alles, was ein gutes Geographie-Quiz braucht</h2>
+    <p class="section-sub">Jedes Detail wurde durchdacht — von KI-Fun Facts bis zum Spielkalender.</p>
+    <div class="features-grid">
+      <div class="feature">
+        <span class="feature-icon">🔥</span>
+        <h3>Serien-Bonus</h3>
+        <p>Antworte mehrere Fragen hintereinander richtig — dein Streak multipliziert den Bonus. Bis zu +200 Punkte extra pro Runde.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">💡</span>
+        <h3>Hinweis-System</h3>
+        <p>Brauchst du Hilfe? Kaufe einen Kontinent-Hinweis (−150 Pkt) oder einen KI-Klimahinweis (−200 Pkt), der das Klima beschreibt ohne den Ort zu verraten.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">🤖</span>
+        <h3>KI-Fun Facts</h3>
+        <p>Nach jeder richtigen Antwort generiert Claude AI einen spannenden Fakt über die Stadt — auf Deutsch oder Englisch, gecacht für maximale Effizienz.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">🗺️</span>
+        <h3>Regionen-Filter</h3>
+        <p>Spiele nur mit Kameras aus Europa, Amerika, Asien, Afrika, Ozeanien oder dem Nahen Osten — lerne gezielt bestimmte Regionen.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">🏅</span>
+        <h3>Abzeichen-System</h3>
+        <p>Jede perfekte Runde bringt ein Abzeichen. Von 🏅 über ⭐ und 💎 bis zur Krone 👑 bei 50+ perfekten Runden.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">👥</span>
+        <h3>Freunde-Rangliste</h3>
+        <p>Erstelle eine private Gruppe mit einem 6-stelligen Code. Alle Freunde sehen gegenseitig ihre Scores in allen Spielmodi.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">📊</span>
+        <h3>Statistiken</h3>
+        <p>Deine persönliche Statistik-Seite: Trefferquote nach Kontinent, beste Runde, längster Streak, letzte 10 Spiele.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">📅</span>
+        <h3>Spielkalender</h3>
+        <p>Wie viele Tage hast du in Folge gespielt? Der GitHub-ähnliche Kalender zeigt deine Aktivität und belohnt Streaks mit Awards.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">🌐</span>
+        <h3>Deutsch &amp; Englisch</h3>
+        <p>Die komplette Benutzeroberfläche — inkl. KI-Fun Facts — ist auf Deutsch und Englisch verfügbar. Ein Klick zum Umschalten.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SCORING ── -->
+<section>
+  <div class="container">
+    <span class="section-label">Punkte-System</span>
+    <h2>So werden Punkte berechnet</h2>
+    <p class="section-sub">Schnelligkeit zahlt sich aus — aber auch Serien und Hinweise wollen bedacht sein.</p>
+    <table class="scoring-table">
+      <tbody>
+        <tr><td>500 Pkt</td><td>Basispunkte für jede richtige Antwort</td></tr>
+        <tr><td>+0–500</td><td>Schnelligkeitsbonus — je früher du antwortest, desto mehr</td></tr>
+        <tr><td>= 1.000</td><td>Maximalpunkte bei sofortiger richtiger Antwort</td></tr>
+        <tr><td>0 Pkt</td><td>Falsche Antwort oder Zeitablauf</td></tr>
+        <tr><td>+50 Pkt</td><td>2× Streak-Bonus</td></tr>
+        <tr><td>+100 Pkt</td><td>3× Streak-Bonus</td></tr>
+        <tr><td>+200 Pkt</td><td>5×+ Streak-Bonus (Maximum)</td></tr>
+        <tr><td>−150 Pkt</td><td>Kontinent-Hinweis verwendet</td></tr>
+        <tr><td>−200 Pkt</td><td>Klima-Hinweis verwendet</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── FAQ ── -->
+<section>
+  <div class="container">
+    <span class="section-label">Häufige Fragen</span>
+    <h2>FAQ</h2>
+    <p class="section-sub">Alles was du wissen musst — bevor du deine erste Runde startest.</p>
+    <div class="faq">
+      <details open>
+        <summary>Was ist GeoWatch und wie funktioniert es?</summary>
+        <div class="faq-body">GeoWatch ist ein kostenloses Geographie-Ratespiel im Browser. Du siehst ein echtes Webcam-Snapshot von irgendwo auf der Welt — ohne Ortsangabe — und musst die richtige Stadt aus 3 Antwortmöglichkeiten wählen. Je schneller du richtig liegst, desto mehr Punkte gibt es. Kein Download, keine Anmeldung, sofort spielbar.</div>
+      </details>
+      <details>
+        <summary>Ist GeoWatch wirklich kostenlos?</summary>
+        <div class="faq-body">Ja, GeoWatch ist vollständig kostenlos und erfordert keinerlei Anmeldung oder Account. Einfach den Link öffnen und sofort spielen — auf Desktop und Mobile.</div>
+      </details>
+      <details>
+        <summary>Was ist der Unterschied zu GeoGuessr?</summary>
+        <div class="faq-body">GeoWatch ist komplett kostenlos ohne Abo. Statt Street View-Panoramen nutzt GeoWatch echte Live-Webcam-Aufnahmen aus über 40.000 Kameras weltweit. Zusätzliche Features: KI-generierte Fun Facts nach jeder richtigen Antwort, Zeitangriff-Modus, Bildvergleich-Modus, Spielkalender und ein Freunde-Leaderboard.</div>
+      </details>
+      <details>
+        <summary>Woher kommen die Kamerabilder?</summary>
+        <div class="faq-body">GeoWatch nutzt die Windy Webcams API mit über 40.000 echten Webcams weltweit. Alle Bilder sind Tageslicht-Aufnahmen — du siehst also immer ein helles, gut erkennbares Bild, egal zu welcher Uhrzeit du spielst.</div>
+      </details>
+      <details>
+        <summary>Kann ich mit Freunden spielen?</summary>
+        <div class="faq-body">Ja! Du hast zwei Optionen: Im Duell-Modus erstellst du ein Spiel, erhältst einen 6-stelligen Code und schickst ihn an einen Freund — ihr spielt dann dieselbe Kamera-Sequenz und vergleicht eure Scores. Alternativ kannst du über "Freunde" eine private Gruppe erstellen, in der alle Mitglieder ihre Scores in allen Modi sehen können.</div>
+      </details>
+      <details>
+        <summary>Gibt es eine tägliche Challenge?</summary>
+        <div class="faq-body">Ja! Jeden Tag um Mitternacht UTC werden 5 neue Kameras generiert — dieselben für alle Spieler weltweit. Die Daily Challenge kann pro Tag nur einmal gespielt werden. Dein Score erscheint im globalen Tagesranking. Ein Countdown zeigt wann die nächste Challenge startet.</div>
+      </details>
+      <details>
+        <summary>Auf welchen Geräten läuft GeoWatch?</summary>
+        <div class="faq-body">GeoWatch läuft in jedem modernen Browser — auf Desktop (Chrome, Firefox, Safari, Edge) und auf dem Smartphone. Kein Download, keine App nötig. Einfach den Link öffnen und losspielen.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ── SEO KEYWORDS SECTION ── -->
+<section>
+  <div class="container">
+    <span class="section-label">Über GeoWatch</span>
+    <h2>Das Geographie-Quiz mit echten Webcams</h2>
+    <p style="color:var(--muted);margin-bottom:28px;max-width:680px;font-size:16px;line-height:1.8;">
+      GeoWatch ist das kostenlose Online-Geographie-Quiz für alle, die ihre Weltkenntnisse testen und verbessern wollen.
+      Anders als klassische Geographie-Quizze zeigt GeoWatch keine Karten oder Flaggen — sondern <strong style="color:var(--text)">echte Webcam-Aufnahmen</strong>
+      aus Städten auf allen Kontinenten. Erkenne Städte an ihrer Architektur, Landschaft, Vegetation und dem typischen Stadtbild.
+    </p>
+    <p style="color:var(--muted);margin-bottom:36px;max-width:680px;font-size:16px;line-height:1.8;">
+      Ob du Städte erraten, Länder erraten oder einfach die Welt besser kennenlernen möchtest —
+      GeoWatch bietet eine einzigartige Kombination aus Spielspaß und Lerneffekt.
+      Nach jeder richtigen Antwort erfährst du einen spannenden Fun Fact über die Stadt, generiert von einer KI.
+    </p>
+    <div class="keyword-cloud">
+      <span class="kw">Städte erraten</span>
+      <span class="kw">Geographie Quiz Online</span>
+      <span class="kw">Webcam Quiz</span>
+      <span class="kw">GeoGuessr Alternative</span>
+      <span class="kw">Städte Quiz Spiel</span>
+      <span class="kw">Welt Quiz kostenlos</span>
+      <span class="kw">Länder erraten</span>
+      <span class="kw">Geographie Spiel</span>
+      <span class="kw">Stadt raten</span>
+      <span class="kw">Geographie lernen</span>
+      <span class="kw">Quiz ohne Anmeldung</span>
+      <span class="kw">Weltgeographie Quiz</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── FINAL CTA ── -->
+<section class="final-cta">
+  <div class="container">
+    <h2>Bereit für deine erste Runde?</h2>
+    <p>Kein Download. Kein Account. Einfach spielen.</p>
+    <a class="btn-primary" href="https://geowatchgame.vercel.app/" style="font-size:17px;padding:18px 40px;">
+      ▶ JETZT KOSTENLOS SPIELEN
+    </a>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="container">
+    <p>
+      <strong style="color:var(--green);font-family:var(--font-mono)">GEOWATCH</strong>
+      &nbsp;·&nbsp;
+      <a href="https://geowatchgame.vercel.app/">geowatchgame.vercel.app</a>
+      &nbsp;·&nbsp;
+      <span style="color:var(--muted)">Kostenloses Geographie Quiz · Städte erraten · Webcam Quiz</span>
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>
