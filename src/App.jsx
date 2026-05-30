@@ -597,6 +597,12 @@ const db = {
     ]);
     return { five:r5.data||[], ten:r10.data||[], fifteen:r15.data||[], twenty:r20.data||[], ta:rta.data||[] };
   },
+  async saveGeo(mode) {
+    if (!supabase) return;
+    const geo = await getPlayerGeo();
+    if (!geo.country_code) return;
+    await supabase.from("player_geo").insert([{ ...geo, mode }]);
+  },
   async loadFriendGroup(code) {
     if (!supabase) return null;
     const { data } = await supabase.from("friend_groups").select("*").eq("code", code).maybeSingle();
@@ -665,6 +671,20 @@ const saveStats = (roundScores, sequence, pool, maxStreak) => {
     recentGames: [{ score:finalScore, date:new Date().toLocaleDateString(), rounds:roundScores.length, correct }, ...prev.recentGames].slice(0, 10),
   });
   recordPlayDate();
+};
+
+// ── IP GEOLOCATION ────────────────────────────────────────────────────────────
+const GEO_CACHE_KEY = "gw-geo";
+const getPlayerGeo = async () => {
+  try {
+    const cached = sessionStorage.getItem(GEO_CACHE_KEY);
+    if (cached) return JSON.parse(cached);
+    const r = await fetch("https://freeipapi.com/api/json", { signal: AbortSignal.timeout(4000) });
+    const d = await r.json();
+    const geo = { country: d.countryName || null, country_code: d.countryCode || null, city: d.cityName || null };
+    sessionStorage.setItem(GEO_CACHE_KEY, JSON.stringify(geo));
+    return geo;
+  } catch { return { country: null, country_code: null, city: null }; }
 };
 
 // ── FUN FACT (Gemini + Supabase cache) ───────────────────────────────────────
@@ -1185,6 +1205,7 @@ export default function GeoWatch() {
     saveStats(roundScores, sequence, pool, maxStreak);
     const isPerfect = roundScores.length > 0 && roundScores.every(s => s > 0);
     await db.addTimeAttackScore({ name: username, score: finalScore, rounds_completed: roundScores.length, date: new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-GB"), badges: isPerfect ? 1 : 0 });
+    db.saveGeo("timeattack"); // non-blocking
     setIsTimeAttack(false);
     setScreen("gameover");
   }, [roundScores, sequence, pool, maxStreak, username, lang]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1329,6 +1350,7 @@ export default function GeoWatch() {
         try {
           saveStats(roundScores, sequence, pool, maxStreak);
           await db.addDailyScore({ name: username, score: finalScore, date: today });
+          db.saveGeo("daily"); // non-blocking
           ls.set("geowatch:daily:" + today, { played: true, score: finalScore });
           const lb = await db.loadDailyLB(today);
           setDailyLB(lb);
@@ -1354,6 +1376,7 @@ export default function GeoWatch() {
       }
       saveStats(roundScores, sequence, pool, maxStreak);
       await db.addScore({ name: username, score: finalScore, date: new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-GB"), rounds: gameRounds });
+      db.saveGeo("standard"); // non-blocking
       setScreen("gameover");
     } else {
       const next = roundIdx + 1;

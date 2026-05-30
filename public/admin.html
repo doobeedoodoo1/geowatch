@@ -230,12 +230,22 @@
       <div id="recent-list"><div class="loading">Lade...</div></div>
     </div>
 
-    <!-- ROW 5: Regionen Hinweis -->
-    <div class="card" style="border-color:rgba(255,204,0,0.2);background:rgba(255,204,0,0.03)">
-      <div class="card-title" style="color:var(--yellow)">🌍 Spieler-Regionen</div>
-      <div style="font-size:14px;color:var(--muted);line-height:1.8">
-        Geographische Herkunft der Spieler wird aktuell nicht erfasst — dafür wäre eine IP-Geolokalisierung beim Speichern des Scores nötig.<br>
-        <strong style="color:var(--text)">Was bereits sichtbar ist:</strong> Die Uhrzeiten-Verteilung oben gibt indirekte Hinweise — z.B. deutet ein Spike um 20–22 Uhr MEZ auf europäische Spieler hin, um 14–16 Uhr MEZ auf amerikanische.
+    <!-- ROW 5: Spieler-Regionen -->
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">🌍 Top Länder (30 Tage)</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px;margin-top:-8px">via IP-Geolokalisierung · ab nächstem Spiel erfasst</div>
+        <div id="countries-chart" class="bar-chart"><div class="loading">Lade...</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Länder-Stats</div>
+        <div class="stat-row"><span class="slabel">Länder heute</span><span class="sval green" id="s-countries-today">–</span></div>
+        <div class="stat-row"><span class="slabel">Länder gesamt (30 Tage)</span><span class="sval" id="s-countries-total">–</span></div>
+        <div class="stat-row"><span class="slabel">Spiele mit Geo-Daten</span><span class="sval" id="s-geo-total">–</span></div>
+        <div style="margin-top:16px">
+          <div class="card-title" style="margin-bottom:8px">Länder nach Modus</div>
+          <div id="geo-modes-chart" class="bar-chart"></div>
+        </div>
       </div>
     </div>
   </main>
@@ -442,6 +452,31 @@ async function loadStats() {
             <div class="act-time">${fmtTime(r.t)}</div>
           `).join('')}
         </div>`;
+    }
+
+    // Countries chart
+    if (s.top_countries && s.top_countries.length > 0) {
+      const maxC = Math.max(...s.top_countries.map(x => x.count));
+      const flagEmoji = cc => cc ? String.fromCodePoint(...[...cc.toUpperCase()].map(c => 0x1F1E6 + c.charCodeAt(0) - 65)) : '🌍';
+      $('countries-chart').innerHTML = s.top_countries.map(x =>
+        barHtml(`${flagEmoji(x.code)} ${x.country || x.code}`, x.count, maxC, '#00ffb3')
+      ).join('');
+    } else {
+      $('countries-chart').innerHTML = '<p style="color:var(--muted);font-size:13px">Noch keine Geo-Daten — werden ab dem nächsten Spiel erfasst.</p>';
+    }
+
+    $('s-countries-today').textContent = fmt(s.countries_today);
+    $('s-countries-total').textContent  = fmt(s.countries_total);
+    $('s-geo-total').textContent        = fmt(s.geo_total);
+
+    // Geo by mode
+    if (s.geo_by_mode && s.geo_by_mode.length > 0) {
+      const gMax = Math.max(...s.geo_by_mode.map(x => x.c));
+      const mc = {standard:'#00ffb3', timeattack:'#00c8ff', daily:'#ffcc00'};
+      const ml = {standard:'🎮 Standard', timeattack:'⏱ Zeitangriff', daily:'🌍 Daily'};
+      $('geo-modes-chart').innerHTML = s.geo_by_mode.map(x =>
+        barHtml(ml[x.mode] || x.mode, x.c, gMax, mc[x.mode] || '#00ffb3')
+      ).join('');
     }
 
     $('last-update').textContent = 'Aktualisiert: ' + new Date().toLocaleTimeString('de-DE');
