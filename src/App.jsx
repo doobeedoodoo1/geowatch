@@ -607,6 +607,7 @@ const generateShareCard = (totalScore, roundScores, maxStreak, gameRounds, lang)
 
 // ── WINDY API via Edge Function ───────────────────────────────────────────────
 const EDGE_URL = "https://muaquiygkhdqvkkglgau.supabase.co/functions/v1/windy-proxy";
+const ENV_WINDY_KEY = import.meta.env.VITE_WINDY_API_KEY || null;
 
 const callProxy = async (body) => {
   const resp = await fetch(EDGE_URL, {
@@ -741,7 +742,7 @@ export default function GeoWatch() {
   useEffect(() => {
     (async () => {
       if (!supabase) { setScreen("setup"); return; }
-      const key   = ls.get("geowatch:windykey");
+      const key   = ENV_WINDY_KEY || ls.get("geowatch:windykey");
       const cache = ls.get("geowatch:camcache");
       if (cache && Date.now() - cache.fetchedAt < CACHE_TTL && cache.cams?.length > 10) {
         setPool(shuffle(cache.cams));
@@ -831,7 +832,7 @@ export default function GeoWatch() {
   }, [currentCam?.id]);
 
   const handleImgError = useCallback(async () => {
-    const apiKey = ls.get("geowatch:windykey");
+    const apiKey = ENV_WINDY_KEY || ls.get("geowatch:windykey");
     if (!currentCam || !apiKey) { setImgLoading(false); return; }
     const fresh = await refreshImageUrl(apiKey, currentCam.id);
     setCamImgUrl(fresh);
@@ -841,7 +842,7 @@ export default function GeoWatch() {
   // ── AUTO-REFRESH snapshot every 30s ──────────────────────────────────────
   useEffect(() => {
     if (screen !== "game" || !currentCam) return;
-    const apiKey = ls.get("geowatch:windykey");
+    const apiKey = ENV_WINDY_KEY || ls.get("geowatch:windykey");
     if (!apiKey) return;
     const id = setInterval(async () => {
       const fresh = await refreshImageUrl(apiKey, currentCam.id);
