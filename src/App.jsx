@@ -715,7 +715,7 @@ export default function GeoWatch() {
   const [funFact,       setFunFact]      = useState(null);
   const [funFactLoad,   setFunFactLoad]  = useState(false);
   const [funFactError,  setFunFactError] = useState(null);
-  const [leaderboard,   setLeaderboard]  = useState({ five: [], ten: [] });
+  const [leaderboard,   setLeaderboard]  = useState({ five: [], ten: [], fifteen: [], twenty: [] });
   const [lbLoading,     setLbLoading]    = useState(false);
   const [duelCode,      setDuelCode]     = useState("");
   const [joinInput,     setJoinInput]    = useState("");
