@@ -2084,6 +2084,10 @@ export default function GeoWatch() {
   if (screen === "stats") {
     const st = ls.get(STATS_KEY) || emptyStats();
     const accPct = st.totalAnswers > 0 ? Math.round(st.correctAnswers / st.totalAnswers * 100) : 0;
+    const accMedal = accPct >= 90 ? { icon:"🥇", label:"GOLD",   color:"#FFD700" }
+                   : accPct >= 80 ? { icon:"🥈", label:"SILVER", color:"#C0C0C0" }
+                   : accPct >= 70 ? { icon:"🥉", label:"BRONZE", color:"#CD7F32" }
+                   : null;
     return (
       <div style={S.app}>
         <div style={S.scan} /><KoFiBtn />
@@ -2102,18 +2106,33 @@ export default function GeoWatch() {
             <>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
                 {[
-                  [t.gamesPlayed,  st.gamesPlayed],
-                  [t.totalScore,   st.totalScore.toLocaleString()],
-                  [t.bestGame,     st.bestScore.toLocaleString()],
-                  [t.accuracy,     `${accPct}%`],
-                  [t.bestStreak,   `🔥 ${st.bestStreak}x`],
-                  [t.correct,      `${st.correctAnswers} / ${st.totalAnswers}`],
+                  [t.gamesPlayed, st.gamesPlayed],
+                  [t.totalScore,  st.totalScore.toLocaleString()],
+                  [t.bestGame,    st.bestScore.toLocaleString()],
+                  [t.bestStreak,  `🔥 ${st.bestStreak}x`],
+                  [t.correct,     `${st.correctAnswers} / ${st.totalAnswers}`],
                 ].map(([label, val]) => (
                   <div key={label} style={{ background:"rgba(0,255,179,0.04)", border:"1px solid rgba(0,255,179,0.12)", borderRadius:4, padding:"12px 14px" }}>
                     <div style={{ fontSize:10, color:"#445566", letterSpacing:"0.15em", textTransform:"uppercase", marginBottom:4 }}>{label}</div>
                     <div style={{ fontSize:20, fontWeight:900, color:"#00ffb3", fontFamily:"'Courier New',Courier,monospace" }}>{val}</div>
                   </div>
                 ))}
+                {/* Accuracy card with medal */}
+                <div style={{ background: accMedal ? `rgba(${accMedal.color === "#FFD700" ? "255,215,0" : accMedal.color === "#C0C0C0" ? "192,192,192" : "205,127,50"},0.07)` : "rgba(0,255,179,0.04)", border:`1px solid ${accMedal ? accMedal.color + "55" : "rgba(0,255,179,0.12)"}`, borderRadius:4, padding:"12px 14px" }}>
+                  <div style={{ fontSize:10, color:"#445566", letterSpacing:"0.15em", textTransform:"uppercase", marginBottom:4 }}>{t.accuracy}</div>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ fontSize:20, fontWeight:900, color: accMedal ? accMedal.color : "#00ffb3", fontFamily:"'Courier New',Courier,monospace" }}>{accPct}%</span>
+                    {accMedal && (
+                      <span style={{ fontSize:22 }} title={accMedal.label}>{accMedal.icon}</span>
+                    )}
+                  </div>
+                  {accMedal && (
+                    <div style={{ fontSize:10, color: accMedal.color, letterSpacing:"0.12em", marginTop:3, opacity:0.8 }}>{accMedal.label}</div>
+                  )}
+                  {!accMedal && accPct > 0 && (
+                    <div style={{ fontSize:10, color:"#445566", marginTop:3 }}>{70 - accPct}% bis 🥉</div>
+                  )}
+                </div>
               </div>
 
               {Object.keys(st.continentStats).length > 0 && (
