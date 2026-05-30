@@ -2219,7 +2219,7 @@ export default function GeoWatch() {
           <div style={{fontSize:22,fontWeight:900,color:"#b464ff",fontFamily:"'Courier New',Courier,monospace"}}>{compareRound+1} / {COMPARE_ROUNDS}</div>
         </div>
         <div style={S.card}>
-          <div style={{fontSize:11,color:"#b464ff",letterSpacing:"0.15em",fontFamily:"'Courier New',Courier,monospace",marginBottom:6}}>🖼 {t.photoCompareQ(contName(compareTarget))}</div>
+          <div style={{fontSize:11,color:"#b464ff",letterSpacing:"0.15em",fontFamily:"'Courier New',Courier,monospace",marginBottom:6}}>🖼 {t.photoCompareQ(contName(compareTarget, lang))}</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
             {["left","right"].map(side=>{
               const cam = side==="left"?compareLeft:compareRight;
