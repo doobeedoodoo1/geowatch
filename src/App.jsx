@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+﻿import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 // ── SUPABASE ──────────────────────────────────────────────────────────────────
@@ -1465,9 +1465,35 @@ export default function GeoWatch() {
 
   // ── SCREENS ──────────────────────────────────────────────────────────────
 
+  const KoFiBtn = () => (
+    <a
+      href="https://ko-fi.com/geowatch"
+      target="_blank"
+      rel="noreferrer"
+      title={lang === "de" ? "Kauf mir einen Kaffee ☕" : "Buy me a coffee ☕"}
+      style={{
+        position:"fixed", bottom:16, right:16, zIndex:9998,
+        display:"flex", alignItems:"center", gap:7,
+        background:"#ff5e5b", color:"#fff",
+        fontFamily:"'Inter',system-ui,sans-serif",
+        fontWeight:700, fontSize:13,
+        padding:"8px 16px", borderRadius:20,
+        textDecoration:"none",
+        boxShadow:"0 2px 12px rgba(255,94,91,0.45)",
+        transition:"opacity 0.15s, transform 0.15s",
+        opacity: screen === "boot" ? 0 : 0.9,
+        pointerEvents: screen === "boot" ? "none" : "auto",
+      }}
+      onMouseOver={e => { e.currentTarget.style.opacity="1"; e.currentTarget.style.transform="translateY(-1px)"; }}
+      onMouseOut={e => { e.currentTarget.style.opacity="0.9"; e.currentTarget.style.transform="translateY(0)"; }}
+    >
+      ☕ Ko-fi
+    </a>
+  );
+
   if (screen === "boot") return (
     <div style={{ ...S.app, justifyContent:"center" }}>
-      <div style={S.scan} />
+      <div style={S.scan} /><KoFiBtn />
       <div style={S.logo}>GEOWATCH</div>
       <div style={{ fontSize:11, color:"#334455", marginTop:8 }}>{t.initializing}</div>
     </div>
@@ -1475,7 +1501,7 @@ export default function GeoWatch() {
 
   if (screen === "setup") return (
     <div style={S.app}>
-      <div style={S.scan} />
+      <div style={S.scan} /><KoFiBtn />
       <div style={S.hdr}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <div style={pool.length > 0 ? S.logoBtn : S.logo} onClick={() => pool.length > 0 && setScreen("home")}>GEOWATCH</div>
@@ -1515,7 +1541,7 @@ export default function GeoWatch() {
 
   if (screen === "loading") return (
     <div style={{ ...S.app, justifyContent:"center" }}>
-      <div style={S.scan} />
+      <div style={S.scan} /><KoFiBtn />
       <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:20, padding:24 }}>
         <div style={S.logo}>GEOWATCH</div>
         <div style={{ fontSize:12, color:"#445566", letterSpacing:"0.2em" }}>{t.loadingCameras}</div>
@@ -1529,7 +1555,7 @@ export default function GeoWatch() {
 
   if (screen === "home") return (
     <div style={S.app}>
-      <div style={S.scan} />
+      <div style={S.scan} /><KoFiBtn />
       <div style={S.hdr}>
         <div>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
@@ -1647,34 +1673,13 @@ export default function GeoWatch() {
         </div>
         {showApiBtn && <button style={{ ...S.btn("g"), fontSize:11, opacity:0.5 }} onClick={() => setScreen("setup")}>{t.reloadCameras}</button>}
 
-        {/* ── BUY ME A COFFEE ── */}
-        <div style={{ display:"flex", justifyContent:"center", paddingTop:8 }}>
-          <a
-            href="https://ko-fi.com/geowatch"
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              display:"inline-flex", alignItems:"center", gap:8,
-              background:"#FFDD00", color:"#000000",
-              fontFamily:"'Inter',system-ui,sans-serif",
-              fontWeight:700, fontSize:14,
-              padding:"10px 20px", borderRadius:6,
-              textDecoration:"none", transition:"opacity 0.15s",
-              boxShadow:"0 2px 12px rgba(255,221,0,0.3)",
-            }}
-            onMouseOver={e=>e.currentTarget.style.opacity='0.85'}
-            onMouseOut={e=>e.currentTarget.style.opacity='1'}
-          >
-            ☕ {lang === "de" ? "Kauf mir einen Kaffee" : "Buy me a coffee"}
-          </a>
-        </div>
       </div>
     </div>
   );
 
   if (screen === "join-duel") return (
     <div style={S.app}>
-      <div style={S.scan} />
+      <div style={S.scan} /><KoFiBtn />
       <div style={S.hdr}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
@@ -1709,7 +1714,7 @@ export default function GeoWatch() {
           @keyframes gw-zoom   { from { transform: scale(3); } to { transform: scale(1); } }
           @keyframes gw-record { 0%{opacity:0;transform:translateY(-4px)} 15%{opacity:1;transform:translateY(0)} 75%{opacity:1} 100%{opacity:0} }
         `}</style>
-        <div style={S.scan} />
+        <div style={S.scan} /><KoFiBtn />
         <div style={S.hdr}>
           <div>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
@@ -1867,7 +1872,7 @@ export default function GeoWatch() {
       : `I scored ${dailyResult.score} points in the GeoWatch Daily Challenge! 🌍 Rank ${dailyResult.rank} of ${dailyResult.total} players. geowatchgame.vercel.app`;
     return (
       <div style={S.app}>
-        <div style={S.scan} />
+        <div style={S.scan} /><KoFiBtn />
         <div style={S.hdr}>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
@@ -1906,7 +1911,7 @@ export default function GeoWatch() {
 
   if (screen === "gameover") return (
     <div style={S.app}>
-      <div style={S.scan} />
+      <div style={S.scan} /><KoFiBtn />
       <div style={S.hdr}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
@@ -1963,7 +1968,7 @@ export default function GeoWatch() {
     );
     return (
       <div style={S.app}>
-        <div style={S.scan} />
+        <div style={S.scan} /><KoFiBtn />
         <div style={S.hdr}>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
@@ -2072,7 +2077,7 @@ export default function GeoWatch() {
     const accPct = st.totalAnswers > 0 ? Math.round(st.correctAnswers / st.totalAnswers * 100) : 0;
     return (
       <div style={S.app}>
-        <div style={S.scan} />
+        <div style={S.scan} /><KoFiBtn />
         <div style={S.hdr}>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
@@ -2216,7 +2221,7 @@ export default function GeoWatch() {
     });
     return (
       <div style={S.app}>
-        <div style={S.scan} />
+        <div style={S.scan} /><KoFiBtn />
         <div style={S.hdr}>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
@@ -2251,7 +2256,7 @@ export default function GeoWatch() {
     const isCh = duelResult.role === "challenger";
     return (
       <div style={S.app}>
-        <div style={S.scan} />
+        <div style={S.scan} /><KoFiBtn />
         <div style={S.hdr}>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
