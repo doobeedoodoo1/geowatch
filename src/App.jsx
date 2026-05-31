@@ -1498,7 +1498,7 @@ export default function GeoWatch() {
 
   // ── SHARE ─────────────────────────────────────────────────────────────────
   const shareResult = useCallback(() => {
-    const url = "www.geowatch-game.de";
+    const url = lang === "de" ? "www.geowatch-game.de" : "geowatchgame.vercel.app";
     const pct  = Math.round(totalScore / (gameRounds * 1000) * 100);
     const bar  = (() => {
       const filled = Math.round(pct / 10);
@@ -2036,7 +2036,7 @@ export default function GeoWatch() {
     const dailyBar = "▓".repeat(Math.round(dailyPct / 10)) + "░".repeat(10 - Math.round(dailyPct / 10)) + ` ${dailyPct}%`;
     const shareText = lang === "de"
       ? `📡 GeoWatch Daily · ${today}\n${"─".repeat(22)}\n🏆 Platz ${dailyResult.rank} von ${dailyResult.total} Spielern\n🎯 ${dailyResult.score.toLocaleString("de-DE")} Punkte\n${dailyBar}\n${"─".repeat(22)}\nSpiel die tägliche Challenge:\n👉 www.geowatch-game.de`
-      : `📡 GeoWatch Daily · ${today}\n${"─".repeat(22)}\n🏆 Rank ${dailyResult.rank} of ${dailyResult.total} players\n🎯 ${dailyResult.score.toLocaleString("en")} pts\n${dailyBar}\n${"─".repeat(22)}\nPlay today's challenge:\n👉 www.geowatch-game.de`;
+      : `📡 GeoWatch Daily · ${today}\n${"─".repeat(22)}\n🏆 Rank ${dailyResult.rank} of ${dailyResult.total} players\n🎯 ${dailyResult.score.toLocaleString("en")} pts\n${dailyBar}\n${"─".repeat(22)}\nPlay today's challenge:\n👉 geowatchgame.vercel.app`;
     return (
       <div style={S.app}>
         <div style={S.scan} /><KoFiBtn />
