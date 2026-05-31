@@ -996,6 +996,7 @@ export default function GeoWatch() {
   const [streak,        setStreak]       = useState(0);
   const [maxStreak,     setMaxStreak]    = useState(0);
   const [newRecord,     setNewRecord]    = useState(false);
+  const [shareCopied,   setShareCopied]  = useState(false);
   // ── Feature 3: zoom mode
   const [zoomMode,      setZoomMode]     = useState(false);
   const [zoomOrigin,    setZoomOrigin]   = useState("50% 50%");
@@ -1497,28 +1498,32 @@ export default function GeoWatch() {
 
   // ── SHARE ─────────────────────────────────────────────────────────────────
   const shareResult = useCallback(() => {
-    const canvas = generateShareCard(totalScore, roundScores, maxStreak, gameRounds, lang);
-    const shareText = lang === "de"
-      ? `Ich habe ${totalScore} Punkte in GeoWatch erreicht! Kannst du das toppen?`
-      : `I scored ${totalScore} points in GeoWatch! Can you beat that?`;
-    const shareUrl = "https://geowatchgame.lovable.app";
-    const download = () => {
-      const a = document.createElement("a");
-      a.download = "geowatch-result.png";
-      a.href = canvas.toDataURL("image/png");
-      a.click();
-    };
-    if (navigator.share) {
-      canvas.toBlob(async (blob) => {
-        const file = new File([blob], "geowatch-result.png", { type: "image/png" });
-        const withFile = { files: [file], title: "GeoWatch", text: shareText, url: shareUrl };
-        try {
-          if (navigator.canShare?.(withFile)) { await navigator.share(withFile); return; }
-          await navigator.share({ title: "GeoWatch", text: shareText, url: shareUrl });
-        } catch { download(); }
+    const url = "www.geowatch-game.de";
+    const pct  = Math.round(totalScore / (gameRounds * 1000) * 100);
+    const bar  = (() => {
+      const filled = Math.round(pct / 10);
+      return "▓".repeat(filled) + "░".repeat(10 - filled) + ` ${pct}%`;
+    })();
+    const rounds = roundScores.map(s => s > 0 ? "✅" : "❌").join("");
+    const streak = maxStreak >= 3 ? (lang === "de" ? `🔥 ${maxStreak}x Streak\n` : `🔥 ${maxStreak}x streak\n`) : "";
+
+    const text = lang === "de"
+      ? `🌍 GeoWatch – Mein Ergebnis\n${"─".repeat(22)}\n🎯 ${totalScore.toLocaleString("de-DE")} / ${(gameRounds * 1000).toLocaleString("de-DE")} Pkt.\n${bar}\n${streak}${rounds}\n${"─".repeat(22)}\nErkennst du Städte aus echten Webcams?\n👉 ${url}`
+      : `🌍 GeoWatch – My Score\n${"─".repeat(22)}\n🎯 ${totalScore.toLocaleString("en")} / ${(gameRounds * 1000).toLocaleString("en")} pts\n${bar}\n${streak}${rounds}\n${"─".repeat(22)}\nCan you beat that? Live webcam quiz!\n👉 ${url}`;
+
+    const fallback = () => {
+      navigator.clipboard?.writeText(text).then(() => {
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2500);
+      }).catch(() => {
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
       });
+    };
+
+    if (navigator.share) {
+      navigator.share({ title: "GeoWatch", text }).catch(fallback);
     } else {
-      download();
+      fallback();
     }
   }, [totalScore, roundScores, maxStreak, gameRounds, lang]);
 
@@ -2026,9 +2031,12 @@ export default function GeoWatch() {
   }
 
   if (screen === "daily-result" && dailyResult) {
+    const today = new Date().toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", { day:"numeric", month:"long" });
+    const dailyPct = Math.round(dailyResult.score / 10000 * 100);
+    const dailyBar = "▓".repeat(Math.round(dailyPct / 10)) + "░".repeat(10 - Math.round(dailyPct / 10)) + ` ${dailyPct}%`;
     const shareText = lang === "de"
-      ? `Ich habe ${dailyResult.score} Punkte in der GeoWatch Daily Challenge erreicht! 🌍 Platz ${dailyResult.rank} von ${dailyResult.total} Spielern. geowatchgame.vercel.app`
-      : `I scored ${dailyResult.score} points in the GeoWatch Daily Challenge! 🌍 Rank ${dailyResult.rank} of ${dailyResult.total} players. geowatchgame.vercel.app`;
+      ? `📡 GeoWatch Daily · ${today}\n${"─".repeat(22)}\n🏆 Platz ${dailyResult.rank} von ${dailyResult.total} Spielern\n🎯 ${dailyResult.score.toLocaleString("de-DE")} Punkte\n${dailyBar}\n${"─".repeat(22)}\nSpiel die tägliche Challenge:\n👉 www.geowatch-game.de`
+      : `📡 GeoWatch Daily · ${today}\n${"─".repeat(22)}\n🏆 Rank ${dailyResult.rank} of ${dailyResult.total} players\n🎯 ${dailyResult.score.toLocaleString("en")} pts\n${dailyBar}\n${"─".repeat(22)}\nPlay today's challenge:\n👉 www.geowatch-game.de`;
     return (
       <div style={S.app}>
         <div style={S.scan} /><KoFiBtn />
@@ -2059,9 +2067,14 @@ export default function GeoWatch() {
           </div>
           <div style={S.div} />
           <button style={{ ...S.btn("g"), borderColor:"rgba(0,200,255,0.5)", color:"#00c8ff" }} onClick={() => {
-            if (navigator.share) { navigator.share({ title:"GeoWatch Daily", text: shareText }).catch(() => {}); }
-            else { const a = document.createElement("a"); a.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`; a.target = "_blank"; a.click(); }
-          }}>📤 {t.shareResult}</button>
+            const fallback = () => {
+              navigator.clipboard?.writeText(shareText).then(() => {
+                setShareCopied(true); setTimeout(() => setShareCopied(false), 2500);
+              }).catch(() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`, "_blank"));
+            };
+            if (navigator.share) { navigator.share({ title:"GeoWatch Daily", text: shareText }).catch(fallback); }
+            else { fallback(); }
+          }}>{shareCopied ? (lang === "de" ? "✓ KOPIERT!" : "✓ COPIED!") : `📤 ${t.shareResult}`}</button>
           <button style={S.btn("g")} onClick={() => setScreen("home")}>{t.mainMenu}</button>
         </div>
       </div>
@@ -2095,7 +2108,9 @@ export default function GeoWatch() {
         <div style={S.div} />
         <div style={S.g2}>
           <button style={S.btn("p")} onClick={() => startGame()}>{t.playAgain}</button>
-          <button style={{ ...S.btn("g"), borderColor:"rgba(0,200,255,0.5)", color:"#00c8ff" }} onClick={shareResult}>{t.shareResult}</button>
+          <button style={{ ...S.btn("g"), borderColor: shareCopied ? "rgba(0,255,179,0.6)" : "rgba(0,200,255,0.5)", color: shareCopied ? "#00ffb3" : "#00c8ff", transition:"all 0.3s" }} onClick={shareResult}>
+            {shareCopied ? (lang === "de" ? "✓ KOPIERT!" : "✓ COPIED!") : t.shareResult}
+          </button>
         </div>
         <div style={S.g2}>
           <button style={S.btn("g")} onClick={() => setScreen("leaderboard")}>{t.leaderboard}</button>
