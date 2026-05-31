@@ -947,7 +947,12 @@ const randOrigin = () => `${20 + Math.floor(Math.random() * 60)}% ${20 + Math.fl
 // ══════════════════════════════════════════════════════════════════════════════
 export default function GeoWatch() {
   const [screen,        setScreen]       = useState("boot");
-  const [lang,          setLang]         = useState(() => localStorage.getItem("gw-lang") || "de");
+  const [lang,          setLang]         = useState(() => {
+    const stored = localStorage.getItem("gw-lang");
+    if (stored) return stored;
+    const browserLang = (navigator.language || navigator.languages?.[0] || "").toLowerCase();
+    return browserLang.startsWith("de") ? "de" : "en";
+  });
   const [apiInput,      setApiInput]     = useState("");
   const [apiError,      setApiError]     = useState("");
   const [loadProg,      setLoadProg]     = useState([0, 15]);
@@ -1602,6 +1607,7 @@ export default function GeoWatch() {
         opacity: screen === "boot" || screen === "game" ? 0 : 0.9,
         pointerEvents: screen === "boot" || screen === "game" ? "none" : "auto",
       }}
+      className="gw-kofi"
       onMouseOver={e => { e.currentTarget.style.opacity="1"; e.currentTarget.style.transform="translateY(-1px)"; }}
       onMouseOut={e => { e.currentTarget.style.opacity="0.9"; e.currentTarget.style.transform="translateY(0)"; }}
     >
@@ -1620,13 +1626,13 @@ export default function GeoWatch() {
   if (screen === "setup") return (
     <div style={S.app}>
       <div style={S.scan} /><KoFiBtn />
-      <div style={S.hdr}>
+      <div style={S.hdr} className="gw-hdr">
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <div style={pool.length > 0 ? S.logoBtn : S.logo} onClick={() => pool.length > 0 && setScreen("home")}>GEOWATCH</div>
           <LangSwitch />
         </div>
       </div>
-      <div style={S.card}>
+      <div style={S.card} className="gw-card">
         <div style={{ textAlign:"center", padding:"12px 0 4px" }}>
           <div style={{ fontSize:13, color:"#6677aa", lineHeight:1.8 }}>
             {lang === "en"
@@ -1674,7 +1680,7 @@ export default function GeoWatch() {
   if (screen === "home") return (
     <div style={S.app}>
       <div style={S.scan} /><KoFiBtn />
-      <div style={S.hdr}>
+      <div style={S.hdr} className="gw-hdr">
         <div>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <div style={S.logo}>GEOWATCH</div>
@@ -1682,14 +1688,14 @@ export default function GeoWatch() {
           </div>
           <div style={S.sub}>GLOBAL SURVEILLANCE GAME</div>
         </div>
-        <div style={{ display:"flex", gap:8 }}>
-          <button style={S.btn("g")} onClick={() => setScreen("faq")}>FAQ</button>
-          <button style={S.btn("g")} onClick={() => setScreen("stats")}>{t.stats}</button>
-          <button style={S.btn("g")} onClick={() => setScreen("friends-lb")}>{t.friendsLB}</button>
-          <button style={S.btn("g")} onClick={() => setScreen("leaderboard")}>{t.leaderboard}</button>
+        <div style={{ display:"flex", gap:8 }} className="gw-hdr-nav">
+          <button style={S.btn("g")} className="gw-btn-nav" onClick={() => setScreen("faq")}>FAQ</button>
+          <button style={S.btn("g")} className="gw-btn-nav" onClick={() => setScreen("stats")}>{t.stats}</button>
+          <button style={S.btn("g")} className="gw-btn-nav" onClick={() => setScreen("friends-lb")}>{t.friendsLB}</button>
+          <button style={S.btn("g")} className="gw-btn-nav" onClick={() => setScreen("leaderboard")}>{t.leaderboard}</button>
         </div>
       </div>
-      <div style={S.card}>
+      <div style={S.card} className="gw-card">
         <div style={{ textAlign:"center", padding:"12px 0 4px" }}>
           <div style={{ fontSize:13, color:"#6677aa", lineHeight:1.7 }}>{t.tagline}</div>
           <div style={{ marginTop:10, display:"flex", gap:8, justifyContent:"center", flexWrap:"wrap" }}>
@@ -1718,7 +1724,7 @@ export default function GeoWatch() {
         </div>
         <div style={S.div} />
         <div style={S.stitle}>{t.selectRounds}</div>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8 }} className="gw-grid-4">
           <button style={S.rndBtn(rounds===5)}  onClick={() => setRounds(5)}>{t.fiveRounds}<br/><span style={{ fontSize:10, opacity:0.6 }}>{t.max5k}</span></button>
           <button style={S.rndBtn(rounds===10)} onClick={() => setRounds(10)}>{t.tenRounds}<br/><span style={{ fontSize:10, opacity:0.6 }}>{t.max10k}</span></button>
           <button style={S.rndBtn(rounds===15)} onClick={() => setRounds(15)}>{t.fifteenRounds}<br/><span style={{ fontSize:10, opacity:0.6 }}>{t.max15k}</span></button>
@@ -1824,14 +1830,14 @@ export default function GeoWatch() {
   if (screen === "join-duel") return (
     <div style={S.app}>
       <div style={S.scan} /><KoFiBtn />
-      <div style={S.hdr}>
+      <div style={S.hdr} className="gw-hdr">
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
           <LangSwitch />
         </div>
         <button style={S.btn("g")} onClick={() => { setJoinError(""); setScreen("home"); }}>{t.back}</button>
       </div>
-      <div style={S.card}>
+      <div style={S.card} className="gw-card">
         <div style={S.stitle}>{t.joinDuelTitle}</div>
         <div style={S.stitle}>{t.yourName}</div>
         <input style={S.inp} placeholder="Username..." value={username} onChange={e => setUsername(e.target.value)} />
@@ -1859,7 +1865,7 @@ export default function GeoWatch() {
           @keyframes gw-record { 0%{opacity:0;transform:translateY(-4px)} 15%{opacity:1;transform:translateY(0)} 75%{opacity:1} 100%{opacity:0} }
         `}</style>
         <div style={S.scan} /><KoFiBtn />
-        <div style={S.hdr}>
+        <div style={S.hdr} className="gw-hdr">
           <div>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
               <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
@@ -1873,7 +1879,7 @@ export default function GeoWatch() {
             <div style={{ fontSize:22, fontWeight:900, color:"#00ffb3", fontFamily:"'Courier New',Courier,monospace" }}>{roundIdx+1} / {roundCount}</div>
           </div>
         </div>
-        <div style={S.card}>
+        <div style={S.card} className="gw-card">
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
             <div>
               <div style={{ fontSize:11, color:"#445566" }}>{t.scoreLabel}: <span style={{ color:"#c8d0d8", fontWeight:700 }}>{totalScore}</span></div>
@@ -1959,7 +1965,7 @@ export default function GeoWatch() {
             {options.map(city => {
               const st = optSt(city);
               return (
-                <button key={city} style={S.optBtn(st)} onClick={() => !ans && handleAnswer(city)}>
+                <button key={city} style={S.optBtn(st)} className="gw-opt-btn" onClick={() => !ans && handleAnswer(city)}>
                   {st==="c"?"✓ ":st==="w"?"✗ ":"○ "}{city}
                 </button>
               );
@@ -2026,17 +2032,17 @@ export default function GeoWatch() {
     return (
       <div style={S.app}>
         <div style={S.scan} /><KoFiBtn />
-        <div style={S.hdr}>
+        <div style={S.hdr} className="gw-hdr">
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
             <LangSwitch />
           </div>
         </div>
-        <div style={S.card}>
+        <div style={S.card} className="gw-card">
           <div style={{ textAlign:"center", padding:"12px 0" }}>
             <div style={{ fontSize:11, color:"#ffcc00", letterSpacing:"0.2em", marginBottom:8, fontFamily:"'Courier New',Courier,monospace" }}>🌍 {t.dailyChallenge}</div>
             <div style={{ fontSize:11, color:"#445566", letterSpacing:"0.2em", marginBottom:10, fontFamily:"'Courier New',Courier,monospace" }}>{t.dailyComplete}</div>
-            <div style={S.score}>{dailyResult.score.toLocaleString()}</div>
+            <div style={S.score} className="gw-score">{dailyResult.score.toLocaleString()}</div>
             <div style={{ fontSize:15, color:"#ffcc00", marginTop:8, fontWeight:700 }}>{t.dailyRank(dailyResult.rank, dailyResult.total)}</div>
             <div style={{ fontSize:12, color:"#445566", marginTop:6, fontFamily:"'Courier New',Courier,monospace" }}>⏱ {t.nextChallenge(countdown)}</div>
           </div>
@@ -2065,16 +2071,16 @@ export default function GeoWatch() {
   if (screen === "gameover") return (
     <div style={S.app}>
       <div style={S.scan} /><KoFiBtn />
-      <div style={S.hdr}>
+      <div style={S.hdr} className="gw-hdr">
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
           <LangSwitch />
         </div>
       </div>
-      <div style={S.card}>
+      <div style={S.card} className="gw-card">
         <div style={{ textAlign:"center", padding:"12px 0" }}>
           <div style={{ fontSize:11, color:"#445566", letterSpacing:"0.2em", marginBottom:10, fontFamily:"'Courier New',Courier,monospace" }}>{t.missionComplete(gameRounds)}</div>
-          <div style={S.score}>{totalScore}</div>
+          <div style={S.score} className="gw-score">{totalScore}</div>
           <div style={{ fontSize:12, color:"#6677aa", marginTop:4 }}>{t.pointsMax(gameRounds * MAX_SCORE)}</div>
           {maxStreak >= 2 && <div style={{ fontSize:12, color:"#ffaa00", marginTop:6, fontFamily:"'Courier New',Courier,monospace" }}>{t.streakLabel(maxStreak)} MAX</div>}
         </div>
@@ -2122,14 +2128,14 @@ export default function GeoWatch() {
     return (
       <div style={S.app}>
         <div style={S.scan} /><KoFiBtn />
-        <div style={S.hdr}>
+        <div style={S.hdr} className="gw-hdr">
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
             <LangSwitch />
           </div>
           <button style={S.btn("g")} onClick={() => setScreen("home")}>{t.back}</button>
         </div>
-        <div style={S.card}>
+        <div style={S.card} className="gw-card">
           <div style={{ fontSize:18, fontWeight:900, letterSpacing:"0.2em", color:"#c8d0d8", fontFamily:"'Courier New',Courier,monospace" }}>{t.leaderboardTitle}</div>
 
           {/* ── TAB SWITCHER ── */}
@@ -2235,14 +2241,14 @@ export default function GeoWatch() {
     return (
       <div style={S.app}>
         <div style={S.scan} /><KoFiBtn />
-        <div style={S.hdr}>
+        <div style={S.hdr} className="gw-hdr">
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
             <LangSwitch />
           </div>
           <button style={S.btn("g")} onClick={() => setScreen("home")}>{t.back}</button>
         </div>
-        <div style={S.card}>
+        <div style={S.card} className="gw-card">
           <div style={{ fontSize:18, fontWeight:900, letterSpacing:"0.2em", color:"#c8d0d8", fontFamily:"'Courier New',Courier,monospace" }}>{t.statsTitle}</div>
           {st.gamesPlayed === 0 ? (
             <div style={{ textAlign:"center", color:"#445566", padding:40 }}>{t.noStats}</div>
@@ -2356,7 +2362,7 @@ export default function GeoWatch() {
                       <div style={S.stitle}>{lang==="de"?"SPIELKALENDER":"PLAY CALENDAR"}</div>
                       <span style={{ fontSize:12, color:"#00ffb3", fontFamily:"'Courier New',Courier,monospace" }}>🔥 {dayStreak} {lang==="de"?"Tage":"day"} streak</span>
                     </div>
-                    <div style={{ display:"grid", gridTemplateColumns:"repeat(16, 1fr)", gap:3 }}>
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(16, 1fr)", gap:3 }} className="gw-calendar">
                       {cells.map(d => (
                         <div key={d} title={d} style={{ aspectRatio:"1", borderRadius:2, background: dateSet.has(d) ? "linear-gradient(135deg,#00ffb3,#00c8ff)" : "rgba(255,255,255,0.05)" }} />
                       ))}
@@ -2394,14 +2400,14 @@ export default function GeoWatch() {
     return (
       <div style={S.app}>
         <div style={S.scan} /><KoFiBtn />
-        <div style={S.hdr}>
+        <div style={S.hdr} className="gw-hdr">
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
             <LangSwitch />
           </div>
           <button style={S.btn("g")} onClick={() => setScreen("home")}>{t.back}</button>
         </div>
-        <div style={S.card}>
+        <div style={S.card} className="gw-card">
           <div style={{ fontSize:18, fontWeight:900, letterSpacing:"0.2em", color:"#c8d0d8", fontFamily:"'Courier New',Courier,monospace" }}>FAQ</div>
           <div style={{ display:"flex", flexDirection:"column" }}>
             {items.map(({ q, a }, i) => (
@@ -2429,18 +2435,18 @@ export default function GeoWatch() {
     return (
       <div style={S.app}>
         <div style={S.scan} /><KoFiBtn />
-        <div style={S.hdr}>
+        <div style={S.hdr} className="gw-hdr">
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <div style={S.logoBtn} onClick={() => setScreen("home")}>GEOWATCH</div>
             <LangSwitch />
           </div>
         </div>
-        <div style={S.card}>
+        <div style={S.card} className="gw-card">
           {isCh ? (
             <>
               <div style={{ textAlign:"center", padding:"12px 0" }}>
                 <div style={{ fontSize:11, color:"#445566", marginBottom:10, fontFamily:"'Courier New',Courier,monospace" }}>{t.yourScore}</div>
-                <div style={S.score}>{duelResult.myScore}</div>
+                <div style={S.score} className="gw-score">{duelResult.myScore}</div>
               </div>
               <div style={{ padding:"16px", background:"rgba(0,255,179,0.05)", borderRadius:4, border:"1px solid rgba(0,255,179,0.2)" }}>
                 <div style={{ fontSize:11, color:"#445566", marginBottom:6, fontFamily:"'Courier New',Courier,monospace" }}>{t.codeForOpponent}</div>
@@ -2482,14 +2488,14 @@ export default function GeoWatch() {
     return (
       <div style={S.app}>
         <div style={S.scan}/>
-        <div style={S.hdr}>
+        <div style={S.hdr} className="gw-hdr">
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <div style={S.logoBtn} onClick={()=>setScreen("home")}>GEOWATCH</div>
             <LangSwitch/>
           </div>
           <div style={{fontSize:22,fontWeight:900,color:"#b464ff",fontFamily:"'Courier New',Courier,monospace"}}>{compareRound+1} / {COMPARE_ROUNDS}</div>
         </div>
-        <div style={S.card}>
+        <div style={S.card} className="gw-card">
           <div style={{fontSize:11,color:"#b464ff",letterSpacing:"0.15em",fontFamily:"'Courier New',Courier,monospace",marginBottom:6}}>🖼 {t.photoCompareQ(contName(compareTarget, lang))}</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
             {["left","right"].map(side=>{
@@ -2547,11 +2553,11 @@ export default function GeoWatch() {
     return (
       <div style={S.app}>
         <div style={S.scan}/>
-        <div style={S.hdr}>
+        <div style={S.hdr} className="gw-hdr">
           <div style={S.logoBtn} onClick={()=>setScreen("home")}>GEOWATCH</div>
           <LangSwitch/>
         </div>
-        <div style={S.card}>
+        <div style={S.card} className="gw-card">
           <div style={{fontSize:18,fontWeight:900,letterSpacing:"0.2em",color:"#b464ff",fontFamily:"'Courier New',Courier,monospace",marginBottom:8}}>🖼 {t.photoCompare}</div>
           <div style={{fontSize:36,fontWeight:900,color:"#00ffb3",fontFamily:"monospace",textAlign:"center",margin:"16px 0"}}>{total.toLocaleString()}</div>
           <div style={{textAlign:"center",fontSize:13,color:"#6677aa",marginBottom:16}}>{correct} / {COMPARE_ROUNDS} {t.correct}</div>
@@ -2569,14 +2575,14 @@ export default function GeoWatch() {
     return (
       <div style={S.app}>
         <div style={S.scan}/>
-        <div style={S.hdr}>
+        <div style={S.hdr} className="gw-hdr">
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <div style={S.logoBtn} onClick={()=>setScreen("home")}>GEOWATCH</div>
             <LangSwitch/>
           </div>
           <button style={S.btn("g")} onClick={()=>setScreen("home")}>{t.back}</button>
         </div>
-        <div style={S.card}>
+        <div style={S.card} className="gw-card">
           <div style={{fontSize:18,fontWeight:900,letterSpacing:"0.2em",color:"#c8d0d8",fontFamily:"'Courier New',Courier,monospace"}}>{t.friendsTitle}</div>
 
           {!friendGroup ? (

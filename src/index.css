@@ -5,9 +5,72 @@
 body {
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
+}
+
+/* ── Mobile responsive ─────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  /* Header: stack vertically */
+  .gw-hdr {
+    flex-direction: column !important;
+    gap: 10px !important;
+    padding: 12px 14px 0 !important;
+    align-items: flex-start !important;
+  }
+
+  /* Home nav buttons: 2×2 grid */
+  .gw-hdr-nav {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    width: 100%;
+    gap: 6px !important;
+  }
+
+  /* Nav buttons: smaller padding & font */
+  .gw-btn-nav {
+    padding: 8px 8px !important;
+    font-size: 11px !important;
+    letter-spacing: 0.05em !important;
+  }
+
+  /* Card: less padding */
+  .gw-card {
+    padding: 12px 14px !important;
+    gap: 12px !important;
+  }
+
+  /* 4-column grids → 2-column */
+  .gw-grid-4 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Stats play calendar: 8 columns instead of 16 */
+  .gw-calendar {
+    grid-template-columns: repeat(8, 1fr) !important;
+    gap: 2px !important;
+  }
+
+  /* Score display: smaller on mobile */
+  .gw-score {
+    font-size: 28px !important;
+  }
+
+  /* Option buttons in game: slightly smaller text */
+  .gw-opt-btn {
+    font-size: 15px !important;
+    padding: 12px 14px !important;
+  }
+
+  /* Ko-fi fixed button: smaller */
+  .gw-kofi {
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+    bottom: 10px !important;
+    right: 10px !important;
+  }
 }
